@@ -2,32 +2,22 @@ package server
 
 import (
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
-	_ "github.com/go-chi/chi/v5/middleware"
+	"platform-go-challenge/internal/config"
 )
 
-func SetupRouter() *chi.Mux {
-	r := chi.NewRouter()
+func wireDependencies() (*RouterDependencies, error) {
+	cfg := config.LoadConfig()
+	routerDependencies := RouterDependencies{
+		JWTAuth: NewJWTAuth(cfg.JWTSecretKey),
+	}
 
-	r.Get("/", getHealth)
-	r.Route("/v1/", func(r chi.Router) {
-		// Public
-		r.Group(func(r chi.Router) {
-		})
-
-		// Private
-		r.Group(func(r chi.Router) {
-			// r.Use(AuthMiddleware)
-			// Admin
-			r.Group(func(r chi.Router) {})
-		})
-	})
-
-	return r
+	return &routerDependencies, nil
 }
 
 func StartServer() {
-	router := SetupRouter()
-	http.ListenAndServe(":3000", router)
+	routerDependencies, _ := wireDependencies()
+
+	router := SetupRouter(*routerDependencies)
+
+	http.ListenAndServe(":8008", router)
 }
