@@ -14,7 +14,7 @@ func wireDependencies() (*RouterDependencies, error) {
 	db := database.NewInMemoryDatabase(cfg.Environment)
 
 	// Users
-	userRepository := user.InMemoryDBUserRepository{DB: db}
+	userRepository := user.NewInMemoryDBUserRepository(db)
 	userService := user.NewUserService(user.ServiceDependencies{
 		GenerateToken:  utils.NewJWTokenIssuer(jwtAuth),
 		UserRepository: &userRepository,

@@ -5,14 +5,20 @@ import (
 )
 
 type UserRepository interface {
-	GetUserByEmail(email string) (*User, error)
+	GetByEmail(email string) (*User, error)
 }
 
-type InMemoryDBUserRepository struct {
+type inMemoryDBUserRepository struct {
 	DB *database.InMemoryDatabase
 }
 
-func InMemoryUserModelToDTO(userModel database.UserModel) User {
+func NewInMemoryDBUserRepository(db *database.InMemoryDatabase) inMemoryDBUserRepository {
+	return inMemoryDBUserRepository{
+		DB: db,
+	}
+}
+
+func InMemoryDBUserModelToDTO(userModel database.UserModel) User {
 	return User{
 		Id:       userModel.Id,
 		Email:    userModel.Email,
@@ -20,10 +26,10 @@ func InMemoryUserModelToDTO(userModel database.UserModel) User {
 	}
 }
 
-func (repo *InMemoryDBUserRepository) GetUserByEmail(email string) (*User, error) {
+func (repo *inMemoryDBUserRepository) GetByEmail(email string) (*User, error) {
 	for _, user := range repo.DB.UserStorage {
 		if user.Email == email {
-			userDTO := InMemoryUserModelToDTO(user)
+			userDTO := InMemoryDBUserModelToDTO(user)
 			return &userDTO, nil
 		}
 	}

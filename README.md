@@ -5,6 +5,7 @@ Thought Process:
 - Which file structure to follow?<br/>
   I've decided to follow the golang-standards/project-layout convention, as I find it clean, widely recognized, and scalable.
   It provides a good foundation for organizing code in a way that's maintainable and familiar to other Go developers.
+  For my internals folder I will follow a Domain Driven Design having each file under its underlying domain.
 
 - Which Framework to use?<br/>
   I'm using Chi, which is a router that's close to Go's standard net/http package.
@@ -26,4 +27,4 @@ Thought Process:
 - Which Database to use?<br/>
   Since the challenge does not require using a real database, I will implement an in-memory store for simplicity.
   Thanks to the current layered architecture, the code remains loosely coupled, making it straightforward to switch to a real database in the future without significant refactoring.
-  In a real life scenario I would probably select a nosql database since assets have varying structures and we it does not require complex relational queries.
+  In a real life scenario I would probably select a nosql database since assets have varying structures and it does not require complex relational queries.

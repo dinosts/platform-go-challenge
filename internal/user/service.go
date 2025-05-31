@@ -24,7 +24,7 @@ func NewUserService(dependencies ServiceDependencies) userService {
 }
 
 func (service *userService) LoginUser(email string, password string) (string, time.Time, error) {
-	user, err := service.Dependencies.UserRepository.GetUserByEmail(email)
+	user, err := service.Dependencies.UserRepository.GetByEmail(email)
 	if err != nil || user.Password != password {
 		return "", time.Time{}, ErrLoginFailed
 	}
