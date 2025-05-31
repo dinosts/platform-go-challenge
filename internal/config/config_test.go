@@ -16,13 +16,11 @@ func unsetEnvVars() {
 func TestGetRequiredEnvVariable(t *testing.T) {
 	// Arrange
 	unsetEnvVars()
+	defer func() { _ = recover() }()
 
 	// Act/Assert
-	defer func() {
-		panicked := recover() == nil
-		assert.True(t, panicked)
-	}()
 	config.GetRequiredEnvVariable("JWT_SECRET_KEY")
+	t.Errorf("did not panic")
 }
 
 func TestGetOptionalEnvVariableWithDefaultValue(t *testing.T) {

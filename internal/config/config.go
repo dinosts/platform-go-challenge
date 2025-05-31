@@ -17,7 +17,7 @@ const notDefined = ""
 func GetRequiredEnvVariable(key string) string {
 	value := os.Getenv(key)
 	if value == notDefined {
-		log.Fatalf("%s env variable is required but not set", key)
+		log.Panicf("%s env variable is required but not set", key)
 	}
 
 	return value
