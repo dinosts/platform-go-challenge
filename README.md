@@ -28,3 +28,8 @@ Thought Process:
   Since the challenge does not require using a real database, I will implement an in-memory store for simplicity.
   Thanks to the current layered architecture, the code remains loosely coupled, making it straightforward to switch to a real database in the future without significant refactoring.
   In a real life scenario I would probably select a nosql database since assets have varying structures and it does not require complex relational queries.
+
+- Use a separate domain for each asset type instead of a single asset domain? <br/>
+  Even though this adds a bit of repetition, it keeps things cleaner and easier to work with.
+  Each asset has its own space, so if we ever want to add something specific, like chart versioning or special filters for audiences,
+  we can do it without messing with other parts of the code.

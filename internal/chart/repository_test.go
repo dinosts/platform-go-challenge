@@ -9,99 +9,119 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInMemoryDBChartRepository_GetByIds(t *testing.T) {
-	chart1ID := uuid.New()
-	chart2ID := uuid.New()
-	chart3ID := uuid.New()
+func TestGetByIds(t *testing.T) {
+	t.Run("should return all charts when all IDs exist", func(t *testing.T) {
+		// Arrange
+		chart1ID := uuid.New()
+		chart2ID := uuid.New()
 
-	mockDB := &database.InMemoryDatabase{
-		ChartStorage: map[uuid.UUID]database.ChartModel{
-			chart1ID: {
-				Id:         chart1ID,
-				Title:      "Chart 1",
-				XAxisTitle: "X Axis 1",
-				YAxisTitle: "Y Axis 1",
-				Data: []map[string]float64{
-					{"x": 1, "y": 1},
-					{"x": 2, "y": 3},
-				},
-			},
-			chart2ID: {
-				Id:         chart2ID,
-				Title:      "Chart 2",
-				XAxisTitle: "X Axis 2",
-				YAxisTitle: "Y Axis 2",
-				Data: []map[string]float64{
-					{"x": 1, "y": 1},
-					{"x": 3, "y": 2},
-				},
-			},
-		},
-	}
-
-	repo := chart.NewInMemoryDBChartRepository(mockDB)
-
-	tests := []struct {
-		name           string
-		inputIDs       []uuid.UUID
-		expectedCharts []chart.Chart
-	}{
-		{
-			name:     "should return charts when IDs exist",
-			inputIDs: []uuid.UUID{chart1ID, chart2ID},
-			expectedCharts: []chart.Chart{
-				{
+		mockDB := &database.InMemoryDatabase{
+			ChartStorage: map[uuid.UUID]database.ChartModel{
+				chart1ID: {
 					Id:         chart1ID,
 					Title:      "Chart 1",
 					XAxisTitle: "X Axis 1",
 					YAxisTitle: "Y Axis 1",
-					Data: chart.ChartData{
+					Data: []map[string]float64{
 						{"x": 1, "y": 1},
 						{"x": 2, "y": 3},
 					},
 				},
-				{
+				chart2ID: {
 					Id:         chart2ID,
 					Title:      "Chart 2",
 					XAxisTitle: "X Axis 2",
 					YAxisTitle: "Y Axis 2",
-					Data: chart.ChartData{
+					Data: []map[string]float64{
 						{"x": 1, "y": 1},
 						{"x": 3, "y": 2},
 					},
 				},
 			},
-		},
-		{
-			name:     "should return partial charts when an chart was not found",
-			inputIDs: []uuid.UUID{chart1ID, chart3ID},
-			expectedCharts: []chart.Chart{
-				{
+		}
+		repo := chart.NewInMemoryDBChartRepository(mockDB)
+
+		expectedResult := []chart.Chart{
+			{
+				Id:         chart1ID,
+				Title:      "Chart 1",
+				XAxisTitle: "X Axis 1",
+				YAxisTitle: "Y Axis 1",
+				Data: chart.ChartData{
+					{"x": 1, "y": 1},
+					{"x": 2, "y": 3},
+				},
+			},
+			{
+				Id:         chart2ID,
+				Title:      "Chart 2",
+				XAxisTitle: "X Axis 2",
+				YAxisTitle: "Y Axis 2",
+				Data: chart.ChartData{
+					{"x": 1, "y": 1},
+					{"x": 3, "y": 2},
+				},
+			},
+		}
+
+		// Act
+		actualResult := repo.GetByIds([]uuid.UUID{chart1ID, chart2ID})
+
+		// Assert
+		assert.Equal(t, expectedResult, actualResult)
+	})
+
+	t.Run("should return only matching charts when some IDs do not exist", func(t *testing.T) {
+		// Arrange
+		chart1ID := uuid.New()
+		nonexistentID := uuid.New()
+
+		mockDB := &database.InMemoryDatabase{
+			ChartStorage: map[uuid.UUID]database.ChartModel{
+				chart1ID: {
 					Id:         chart1ID,
 					Title:      "Chart 1",
 					XAxisTitle: "X Axis 1",
 					YAxisTitle: "Y Axis 1",
-					Data: chart.ChartData{
+					Data: []map[string]float64{
 						{"x": 1, "y": 1},
 						{"x": 2, "y": 3},
 					},
 				},
 			},
-		},
-		{
-			name:           "should return empty slice when input is empty",
-			inputIDs:       []uuid.UUID{},
-			expectedCharts: []chart.Chart{},
-		},
-	}
+		}
+		repo := chart.NewInMemoryDBChartRepository(mockDB)
+		expectedResult := []chart.Chart{
+			{
+				Id:         chart1ID,
+				Title:      "Chart 1",
+				XAxisTitle: "X Axis 1",
+				YAxisTitle: "Y Axis 1",
+				Data: chart.ChartData{
+					{"x": 1, "y": 1},
+					{"x": 2, "y": 3},
+				},
+			},
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Act
-			actualCharts := repo.GetByIds(tt.inputIDs)
+		// Act
+		ActualResult := repo.GetByIds([]uuid.UUID{chart1ID, nonexistentID})
 
-			// Assert
-			assert.Equal(t, tt.expectedCharts, actualCharts)
-		})
-	}
+		// Assert
+		assert.Equal(t, expectedResult, ActualResult)
+	})
+
+	t.Run("should return empty slice when input is empty", func(t *testing.T) {
+		// Arrange
+		mockDB := &database.InMemoryDatabase{
+			ChartStorage: map[uuid.UUID]database.ChartModel{},
+		}
+		repo := chart.NewInMemoryDBChartRepository(mockDB)
+
+		// Act
+		result := repo.GetByIds([]uuid.UUID{})
+
+		// Assert
+		assert.Empty(t, result)
+	})
 }

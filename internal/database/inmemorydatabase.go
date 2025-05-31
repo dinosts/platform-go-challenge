@@ -8,6 +8,11 @@ type UserModel struct {
 	Password string
 }
 
+type InsightModel struct {
+	Id   uuid.UUID
+	Text string
+}
+
 type ChartModel struct {
 	Id         uuid.UUID
 	Title      string
@@ -17,16 +22,22 @@ type ChartModel struct {
 }
 
 type (
-	UserStorage  map[uuid.UUID]UserModel
-	ChartStorage map[uuid.UUID]ChartModel
+	UserStorage    map[uuid.UUID]UserModel
+	ChartStorage   map[uuid.UUID]ChartModel
+	InsightStorage map[uuid.UUID]InsightModel
 )
 
 type InMemoryDatabase struct {
-	UserStorage  UserStorage
-	ChartStorage ChartStorage
+	UserStorage    UserStorage
+	ChartStorage   ChartStorage
+	InsightStorage InsightStorage
 }
 
-func populateStorageForDevEnv(userStorage *UserStorage, chartStorage *ChartStorage) {
+func populateStorageForDevEnv(
+	userStorage *UserStorage,
+	chartStorage *ChartStorage,
+	insightStorage *InsightStorage,
+) {
 	devUser := UserModel{Id: uuid.New(), Email: "test@test.com", Password: "pass"}
 	us := *userStorage
 	us[devUser.Id] = devUser
@@ -44,13 +55,31 @@ func populateStorageForDevEnv(userStorage *UserStorage, chartStorage *ChartStora
 	}
 	cs := *chartStorage
 	cs[chart.Id] = chart
+
+	insight := InsightModel{
+		Id:   uuid.New(),
+		Text: "40% of millennials spend more than 3hours on social media daily",
+	}
+	is := *insightStorage
+	is[insight.Id] = insight
 }
 
 func NewInMemoryDatabase(env string) *InMemoryDatabase {
 	userStorage := UserStorage{}
+	chartStorage := ChartStorage{}
+	insighStorage := InsightStorage{}
 
 	if env == "dev" {
+		populateStorageForDevEnv(
+			&userStorage,
+			&chartStorage,
+			&insighStorage,
+		)
 	}
 
-	return &InMemoryDatabase{UserStorage: userStorage}
+	return &InMemoryDatabase{
+		UserStorage:    userStorage,
+		ChartStorage:   chartStorage,
+		InsightStorage: insighStorage,
+	}
 }
