@@ -8,12 +8,13 @@ import (
 )
 
 type Config struct {
+	Environment  string
 	JWTSecretKey string
 }
 
-var notDefined = ""
+const notDefined = ""
 
-func getRequiredEnvVariable(key string) string {
+func GetRequiredEnvVariable(key string) string {
 	value := os.Getenv(key)
 	if value == notDefined {
 		log.Fatalf("%s env variable is required but not set", key)
@@ -22,10 +23,14 @@ func getRequiredEnvVariable(key string) string {
 	return value
 }
 
-func getOptionalEnvVariable(key string) string {
+func GetOptionalEnvVariableWithDefaultValue(key string, defaultValue string) string {
 	value := os.Getenv(key)
 	if value == notDefined {
 		log.Printf("%s env variable is not set", key)
+
+		if defaultValue != "" {
+			return defaultValue
+		}
 	}
 
 	return value
@@ -33,19 +38,18 @@ func getOptionalEnvVariable(key string) string {
 
 func buildConfig() *Config {
 	cfg := Config{
-		JWTSecretKey: getRequiredEnvVariable("JWT_SECRET_KEY"),
+		Environment:  GetOptionalEnvVariableWithDefaultValue("APP_ENV", "dev"),
+		JWTSecretKey: GetRequiredEnvVariable("JWT_SECRET_KEY"),
 	}
 
 	return &cfg
 }
 
-func LoadConfig() *Config {
+func NewConfig() *Config {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Env file could not be loaded")
+		log.Println("Warning: .env file not found, relying on environment variables")
 	}
 
-	cfg := buildConfig()
-
-	return cfg
+	return buildConfig()
 }

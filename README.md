@@ -13,8 +13,17 @@ Thought Process:
 - Architecture and Dependency injection?
   I chose a layered architecture for this project, separating the code into a presentation layer, service layer, and repository layer.
   I’m trying to approach the implementation with a procedural mindset rather than following object-oriented design patterns.
+  Separating code into services and repositories feels like object-oriented design, I think it’s needed to keep things organized and clear.
+  It’s hard to avoid OOP patterns completely in this case.
 
 - Stateless or stateful authentication?
   I chose JWT-based stateless authentication to keep the service simple and decoupled from any central session store.
   I'm skipping refresh tokens altogether and instead issuing short-lived JWTs.
   This enables fast request handling, as the server can validate tokens locally without needing to query an external store for each authorization check.
+
+31/05/25
+
+- Which Database to use?
+  Since the challenge does not require using a real database, I will implement an in-memory store for simplicity.
+  Thanks to the current layered architecture, the code remains loosely coupled, making it straightforward to switch to a real database in the future without significant refactoring.
+  In a real life scenario I would probably select a nosql database since assets have varying structures and we it does not require complex relational queries.

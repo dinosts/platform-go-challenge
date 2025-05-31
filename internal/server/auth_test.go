@@ -16,7 +16,7 @@ func TestGenerateJWToken(t *testing.T) {
 	tokenAuth := server.NewJWTAuth("secret")
 
 	// Act
-	token, err := server.GenerateJWToken(tokenAuth, map[string]any{"user_id": 123})
+	token, err := server.NewJWToken(tokenAuth, map[string]any{"user_id": 123})
 
 	// Assert
 	assert.NoError(t, err)
@@ -28,7 +28,7 @@ func TestVerifierAndAuthenticatorMiddleware_ValidToken(t *testing.T) {
 	jwtAuth := jwtauth.New("HS256", []byte("secret"), nil)
 
 	handler := setupHandler(jwtAuth)
-	token, _ := server.GenerateJWToken(jwtAuth, map[string]any{"user_id": 1})
+	token, _ := server.NewJWToken(jwtAuth, map[string]any{"user_id": 1})
 
 	r := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()

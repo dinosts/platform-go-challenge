@@ -1,9 +1,21 @@
-package server
+package utils
 
 import (
 	"encoding/json"
 	"net/http"
 )
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+type DataResponse struct {
+	Data any `json:"data"`
+}
+
+type MessageResponse struct {
+	Message string `json:"message"`
+}
 
 func respondWithJSON(w http.ResponseWriter, status int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
