@@ -5,28 +5,30 @@ import (
 	"platform-go-challenge/internal/config"
 	"platform-go-challenge/internal/database"
 	"platform-go-challenge/internal/user"
+	"platform-go-challenge/internal/utils"
 )
 
 func wireDependencies() (*RouterDependencies, error) {
-	cfg := config.LoadConfig()
-	jwtAuth := NewJWTAuth(cfg.JWTSecretKey)
-	db := database.NewInMemoryDatabase()
+	cfg := config.NewConfig()
+	jwtAuth := utils.NewJWTAuth(cfg.JWTSecretKey)
+	db := database.NewInMemoryDatabase(cfg.Environment)
 
 	// Users
 	userRepository := user.InMemoryDBUserRepository{DB: db}
-	userService := user.UserService{Dependencies: user.ServiceDependencies{
-		GenerateToken:  NewJWTokenIssuer(jwtAuth),
+	userService := user.NewUserService(user.ServiceDependencies{
+		GenerateToken:  utils.NewJWTokenIssuer(jwtAuth),
 		UserRepository: &userRepository,
-	}}
+	})
 
 	userLoginHandler := user.UserLoginHandler(
 		user.UserLoginDependencies{
-			UserService: userService,
+			UserService: &userService,
 		},
 	)
 
 	// Favourites
 
+	// Routing
 	routerDependencies := RouterDependencies{
 		JWTAuth:          jwtAuth,
 		UserLoginHandler: userLoginHandler,

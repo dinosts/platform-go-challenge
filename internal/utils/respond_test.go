@@ -56,7 +56,7 @@ func TestRespondWithData(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, recorder.Code)
 	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
 
-	var body utils.DataResponse
+	var body utils.DataResponse[any]
 	err := json.NewDecoder(recorder.Body).Decode(&body)
 	assert.NoError(t, err)
 

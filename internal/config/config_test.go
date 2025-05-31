@@ -8,6 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func unsetEnvVars() {
+	os.Unsetenv("ENV")
+	os.Unsetenv("JWT_SECRET_KEY")
+}
+
 func TestGetRequiredEnvVariable(t *testing.T) {
 	// Arrange
 	unsetEnvVars()
@@ -46,14 +51,4 @@ func TestGetOptionalEnvVariableWithDefaultValue(t *testing.T) {
 		// Assert
 		assert.Equal(t, actual_result, expected_result)
 	})
-}
-
-func TestNewConfig(t t *testing.T){
-
-}
-
-// Helpers
-func unsetEnvVars() {
-	os.Unsetenv("ENV")
-	os.Unsetenv("JWT_SECRET_KEY")
 }

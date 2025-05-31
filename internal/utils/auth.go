@@ -1,9 +1,8 @@
-package server
+package utils
 
 import (
 	"fmt"
 	"net/http"
-	"platform-go-challenge/internal/utils"
 	"time"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -25,13 +24,13 @@ func AuthenticatorMiddleware() func(next http.Handler) http.Handler {
 			token, _, err := jwtauth.FromContext(r.Context())
 			if err != nil {
 				message := fmt.Sprintf("Could not Authorize: %s", err.Error())
-				utils.RespondWithError(w, http.StatusUnauthorized, message)
+				RespondWithError(w, http.StatusUnauthorized, message)
 				return
 			}
 
 			if token == nil {
 				message := "Authorization token not found"
-				utils.RespondWithError(w, http.StatusUnauthorized, message)
+				RespondWithError(w, http.StatusUnauthorized, message)
 				return
 			}
 

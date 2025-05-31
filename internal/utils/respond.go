@@ -9,8 +9,8 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-type DataResponse struct {
-	Data any `json:"data"`
+type DataResponse[T any] struct {
+	Data T `json:"data"`
 }
 
 type MessageResponse struct {
@@ -31,6 +31,6 @@ func RespondWithMessage(w http.ResponseWriter, status int, message string) {
 	respondWithJSON(w, status, MessageResponse{Message: message})
 }
 
-func RespondWithData(w http.ResponseWriter, status int, data any) {
-	respondWithJSON(w, status, DataResponse{Data: data})
+func RespondWithData[T any](w http.ResponseWriter, status int, data T) {
+	respondWithJSON(w, status, DataResponse[T]{Data: data})
 }

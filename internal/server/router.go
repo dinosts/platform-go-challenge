@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"platform-go-challenge/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -20,7 +21,7 @@ func SetupRouter(dependencies RouterDependencies) *chi.Mux {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Get("/", getHealth)
+	r.Get("/", GetHealth)
 	r.Route("/v1", func(r chi.Router) {
 		// Public
 		r.Group(func(r chi.Router) {
@@ -31,8 +32,8 @@ func SetupRouter(dependencies RouterDependencies) *chi.Mux {
 
 		// Private
 		r.Group(func(r chi.Router) {
-			r.Use(VerifierMiddleware(dependencies.JWTAuth))
-			r.Use(AuthenticatorMiddleware())
+			r.Use(utils.VerifierMiddleware(dependencies.JWTAuth))
+			r.Use(utils.AuthenticatorMiddleware())
 
 			// Admin
 			r.Group(func(r chi.Router) {})

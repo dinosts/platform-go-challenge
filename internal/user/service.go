@@ -4,16 +4,26 @@ import (
 	"time"
 )
 
+type UserService interface {
+	LoginUser(email string, password string) (string, time.Time, error)
+}
+
 type ServiceDependencies struct {
 	UserRepository UserRepository
 	GenerateToken  func(map[string]any) (string, time.Time, error)
 }
 
-type UserService struct {
+type userService struct {
 	Dependencies ServiceDependencies
 }
 
-func (service *UserService) LoginUser(email string, password string) (string, time.Time, error) {
+func NewUserService(dependencies ServiceDependencies) userService {
+	return userService{
+		Dependencies: dependencies,
+	}
+}
+
+func (service *userService) LoginUser(email string, password string) (string, time.Time, error) {
 	user, err := service.Dependencies.UserRepository.GetUserByEmail(email)
 	if err != nil || user.Password != password {
 		return "", time.Time{}, ErrLoginFailed

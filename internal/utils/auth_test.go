@@ -1,9 +1,9 @@
-package server_test
+package utils_test
 
 import (
 	"net/http"
 	"net/http/httptest"
-	"platform-go-challenge/internal/server"
+	"platform-go-challenge/internal/utils"
 	"strings"
 	"testing"
 
@@ -13,14 +13,15 @@ import (
 
 func TestGenerateJWToken(t *testing.T) {
 	// Arrange
-	tokenAuth := server.NewJWTAuth("secret")
+	tokenAuth := utils.NewJWTAuth("secret")
 
 	// Act
-	token, err := server.NewJWToken(tokenAuth, map[string]any{"user_id": 123})
+	token, expiresAt, err := utils.NewJWToken(tokenAuth, map[string]any{"user_id": 123})
 
 	// Assert
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
+	assert.NotEmpty(t, expiresAt)
 }
 
 func TestVerifierAndAuthenticatorMiddleware_ValidToken(t *testing.T) {
@@ -28,7 +29,7 @@ func TestVerifierAndAuthenticatorMiddleware_ValidToken(t *testing.T) {
 	jwtAuth := jwtauth.New("HS256", []byte("secret"), nil)
 
 	handler := setupHandler(jwtAuth)
-	token, _ := server.NewJWToken(jwtAuth, map[string]any{"user_id": 1})
+	token, _, _ := utils.NewJWToken(jwtAuth, map[string]any{"user_id": 1})
 
 	r := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
@@ -79,7 +80,7 @@ func setupHandler(jwtAuth *jwtauth.JWTAuth) http.Handler {
 		w.Write([]byte("Authorized"))
 	})
 
-	authHandler := server.AuthenticatorMiddleware()(baseHandler)
+	authHandler := utils.AuthenticatorMiddleware()(baseHandler)
 
-	return server.VerifierMiddleware(jwtAuth)(authHandler)
+	return utils.VerifierMiddleware(jwtAuth)(authHandler)
 }

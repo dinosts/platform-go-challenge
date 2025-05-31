@@ -18,6 +18,6 @@ type UserLoginRequestBody struct {
 }
 
 type UserLoginResponseBody struct {
-	Token      string    `json:"token"`
-	Expires_at time.Time `json:"expires_at"`
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
 }

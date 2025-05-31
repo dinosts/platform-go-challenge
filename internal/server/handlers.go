@@ -5,6 +5,6 @@ import (
 	"platform-go-challenge/internal/utils"
 )
 
-func getHealth(w http.ResponseWriter, r *http.Request) {
+func GetHealth(w http.ResponseWriter, r *http.Request) {
 	utils.RespondWithMessage(w, http.StatusOK, "Healthy!")
 }

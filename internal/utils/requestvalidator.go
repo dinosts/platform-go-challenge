@@ -22,7 +22,8 @@ func BodyValidator[T any](next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if err := validate.Struct(parsedBody); err != nil {
-			message := fmt.Sprintf("Body Validation Failed: %s", err.Error())
+			errs := err.(validator.ValidationErrors)
+			message := fmt.Sprintf("Body Validation Failed, %s", errs)
 			RespondWithError(w, http.StatusBadRequest, message)
 			return
 		}

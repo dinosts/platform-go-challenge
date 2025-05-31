@@ -31,8 +31,8 @@ func UserLoginHandler(dependencies UserLoginDependencies) http.HandlerFunc {
 			}
 
 			response := UserLoginResponseBody{
-				Token:      token,
-				Expires_at: expiresAt,
+				Token:     token,
+				ExpiresAt: expiresAt,
 			}
 
 			utils.RespondWithData(w, http.StatusOK, response)
