@@ -2,12 +2,13 @@ package favourite
 
 import (
 	"platform-go-challenge/internal/database"
+	"platform-go-challenge/internal/utils"
 
 	"github.com/google/uuid"
 )
 
 type FavouriteRepository interface {
-	GetByUserIdPaginated(userId uuid.UUID, pageSize int, pageNumber int) ([]Favourite, error)
+	GetByUserIdPaginated(userId uuid.UUID, pageSize int, pageNumber int) ([]Favourite, utils.Pagination, error)
 }
 
 type inMemoryDBFavouriteRepository struct {
@@ -30,7 +31,7 @@ func InMemoryDBFavouriteModelToDTO(model database.FavouriteModel) Favourite {
 	}
 }
 
-func (repo *inMemoryDBFavouriteRepository) GetByUserIdPaginated(userId uuid.UUID, pageSize int, pageNumber int) (PaginatedFavourites, error) {
+func (repo *inMemoryDBFavouriteRepository) GetByUserIdPaginated(userId uuid.UUID, pageSize int, pageNumber int) ([]Favourite, utils.Pagination, error) {
 	var result []Favourite
 
 	totalCount := 0
@@ -55,10 +56,5 @@ func (repo *inMemoryDBFavouriteRepository) GetByUserIdPaginated(userId uuid.UUID
 	// int casting rounds down. (wanted behaviour cause we start pages from 0)
 	totalPages := int(totalCount / pageSize)
 
-	return PaginatedFavourites{
-		Items:    result,
-		Page:     pageNumber,
-		PageSize: pageSize,
-		MaxPage:  totalPages,
-	}, nil
+	return result, utils.Pagination{Page: pageNumber, PageSize: pageSize, MaxPage: totalPages}, nil
 }

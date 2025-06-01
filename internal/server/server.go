@@ -2,8 +2,12 @@ package server
 
 import (
 	"net/http"
+	"platform-go-challenge/internal/audience"
+	"platform-go-challenge/internal/chart"
 	"platform-go-challenge/internal/config"
 	"platform-go-challenge/internal/database"
+	"platform-go-challenge/internal/favourite"
+	"platform-go-challenge/internal/insight"
 	"platform-go-challenge/internal/user"
 	"platform-go-challenge/internal/utils"
 )
@@ -27,11 +31,29 @@ func wireDependencies() (*RouterDependencies, error) {
 	)
 
 	// Favourites
+	chartRepository := chart.NewInMemoryDBChartRepository(db)
+	insightRepository := insight.NewInMemoryDBInsightRepository(db)
+	audienceRepository := audience.NewInMemoryDBAudienceRepository(db)
+	favouriteRepository := favourite.NewInMemoryDBFavouriteRepository(db)
+
+	favouriteService := favourite.NewFavouriteService(favourite.FavouriteServiceDependencies{
+		ChartRepository:     &chartRepository,
+		InsightRepository:   &insightRepository,
+		AudienceRepository:  &audienceRepository,
+		FavouriteRepository: &favouriteRepository,
+	})
+
+	getFavouritesHandler := favourite.GetFavouritesHandler(
+		favourite.GetFavouritesHandlerDependencies{
+			FavouriteService: &favouriteService,
+		},
+	)
 
 	// Routing
 	routerDependencies := RouterDependencies{
-		JWTAuth:          jwtAuth,
-		UserLoginHandler: userLoginHandler,
+		JWTAuth:              jwtAuth,
+		UserLoginHandler:     userLoginHandler,
+		GetFavouritesHandler: getFavouritesHandler,
 	}
 
 	return &routerDependencies, nil

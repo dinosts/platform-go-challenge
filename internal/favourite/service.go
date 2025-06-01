@@ -1,16 +1,18 @@
 package favourite
 
 import (
+	"fmt"
 	"platform-go-challenge/internal/audience"
 	"platform-go-challenge/internal/chart"
 	"platform-go-challenge/internal/insight"
+	"platform-go-challenge/internal/utils"
 
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 )
 
 type FavouriteService interface {
-	GetPaginatedForUser(UserId uuid.UUID)
+	GetPaginatedForUser(UserId uuid.UUID, pageSize int, pageNumber int) (*AssetFavourites, *utils.Pagination, error)
 }
 
 type FavouriteServiceDependencies struct {
@@ -24,20 +26,23 @@ type favouriteService struct {
 	Dependencies FavouriteServiceDependencies
 }
 
-func NewUserService(dependencies FavouriteServiceDependencies) favouriteService {
+func NewFavouriteService(dependencies FavouriteServiceDependencies) favouriteService {
 	return favouriteService{
 		Dependencies: dependencies,
 	}
 }
 
-func (service *favouriteService) GetPaginatedForUser(UserId uuid.UUID, pageSize int, pageNumber int) {
-	favourites, _ := service.Dependencies.FavouriteRepository.GetByUserIdPaginated(UserId, pageSize, pageNumber)
+func (service *favouriteService) GetPaginatedForUser(UserId uuid.UUID, pageSize int, pageNumber int) (*AssetFavourites, *utils.Pagination, error) {
+	favourites, pagination, err := service.Dependencies.FavouriteRepository.GetByUserIdPaginated(UserId, pageSize, pageNumber)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	groupedFavourites := groupFavouritesByAssetType(favourites)
+	chartIds := ExtractAssetTypeIds(AssetTypeChart, favourites)
+	insightIds := ExtractAssetTypeIds(AssetTypeInsight, favourites)
+	audienceIds := ExtractAssetTypeIds(AssetTypeAudience, favourites)
 
-	chartIds := extractIds(groupedFavourites.Charts)
-	insightIds := extractIds(groupedFavourites.Insights)
-	audienceIds := extractIds(groupedFavourites.Audience)
+	fmt.Println(chartIds)
 
 	var (
 		charts    []chart.Chart
@@ -66,8 +71,13 @@ func (service *favouriteService) GetPaginatedForUser(UserId uuid.UUID, pageSize 
 	})
 
 	if err := g.Wait(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	print(charts, insights, audiences)
+	result, err := BuildAssetFavourites(favourites, charts, insights, audiences)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return result, &pagination, nil
 }

@@ -105,7 +105,7 @@ func TestGetByIds(t *testing.T) {
 		}
 
 		// Act
-		result, _ := repo.GetByIds([]uuid.UUID{chart1ID, nonexistentID})
+		result, _ := repo.GetByIds(uuid.UUIDs{chart1ID, nonexistentID})
 
 		// Assert
 		assert.Equal(t, expectedResult, result)

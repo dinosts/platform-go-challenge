@@ -1,6 +1,7 @@
 package chart
 
 import (
+	"fmt"
 	"platform-go-challenge/internal/database"
 
 	"github.com/google/uuid"
@@ -32,9 +33,14 @@ func InMemoryDBChartModelToDTO(chartModel database.ChartModel) Chart {
 
 func (repo *inMemoryDBChartRepository) GetByIds(ids uuid.UUIDs) ([]Chart, error) {
 	result := []Chart{}
+
+	for _, id := range repo.DB.ChartStorage {
+		fmt.Println(ids)
+		fmt.Printf("%+v\n", id)
+	}
+
 	for _, id := range ids {
 		v, found := repo.DB.ChartStorage[id]
-
 		if !found {
 			continue
 		}

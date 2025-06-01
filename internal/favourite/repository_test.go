@@ -62,16 +62,16 @@ func TestGetByUserIdPaginated(t *testing.T) {
 		expectedMaxPage := 1
 
 		// Act
-		result, _ := repo.GetByUserIdPaginated(user1, pageSize, pageNumber)
+		result, pagination, _ := repo.GetByUserIdPaginated(user1, pageSize, pageNumber)
 
 		// Assert
-		assert.Equal(t, pageNumber, result.Page)
-		assert.Equal(t, pageSize, result.PageSize)
+		assert.Equal(t, pageNumber, pagination.Page)
+		assert.Equal(t, pageSize, pagination.PageSize)
+		assert.Equal(t, expectedMaxPage, pagination.MaxPage)
 
-		assert.Equal(t, expectedItemsLen, len(result.Items))
-		assert.Equal(t, expectedMaxPage, result.MaxPage)
+		assert.Equal(t, expectedItemsLen, len(result))
 
-		for _, fav := range result.Items {
+		for _, fav := range result {
 			assert.Equal(t, user1, fav.UserId)
 		}
 	})
@@ -94,16 +94,16 @@ func TestGetByUserIdPaginated(t *testing.T) {
 		expectedMaxPage := 1
 
 		// Arrange
-		result, _ := repo.GetByUserIdPaginated(user1, pageSize, pageNumber)
+		result, pagination, _ := repo.GetByUserIdPaginated(user1, pageSize, pageNumber)
 
 		// Assert
-		assert.Equal(t, expectedItemsLen, len(result.Items))
-		assert.Equal(t, expectedMaxPage, result.MaxPage)
+		assert.Equal(t, expectedItemsLen, len(result))
+		assert.Equal(t, expectedMaxPage, pagination.MaxPage)
 
-		assert.Equal(t, pageNumber, result.Page)
-		assert.Equal(t, pageSize, result.PageSize)
+		assert.Equal(t, pageNumber, pagination.Page)
+		assert.Equal(t, pageSize, pagination.PageSize)
 
-		for _, fav := range result.Items {
+		for _, fav := range result {
 			assert.Equal(t, user1, fav.UserId)
 		}
 	})
@@ -121,15 +121,14 @@ func TestGetByUserIdPaginated(t *testing.T) {
 		pageNumber := 5
 
 		// Act
-		result, _ := repo.GetByUserIdPaginated(user1, pageSize, pageNumber)
+		result, pagination, _ := repo.GetByUserIdPaginated(user1, pageSize, pageNumber)
 
 		// Assert
-		assert.Empty(t, result.Items)
+		assert.Empty(t, result)
 
-		assert.Equal(t, pageNumber, result.Page)
-		assert.Equal(t, pageSize, result.PageSize)
-
-		assert.Equal(t, 1, result.MaxPage)
+		assert.Equal(t, pageNumber, pagination.Page)
+		assert.Equal(t, pageSize, pagination.PageSize)
+		assert.Equal(t, 1, pagination.MaxPage)
 	})
 
 	t.Run("returns empty on no favourites", func(t *testing.T) {
@@ -139,10 +138,10 @@ func TestGetByUserIdPaginated(t *testing.T) {
 		})
 
 		// Act
-		result, _ := repo.GetByUserIdPaginated(user1, 10, 0)
+		result, pagination, _ := repo.GetByUserIdPaginated(user1, 10, 0)
 
 		// Assert
-		assert.Empty(t, result.Items)
-		assert.Equal(t, 0, result.MaxPage)
+		assert.Empty(t, result)
+		assert.Equal(t, 0, pagination.MaxPage)
 	})
 }

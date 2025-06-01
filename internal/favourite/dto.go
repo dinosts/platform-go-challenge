@@ -1,6 +1,12 @@
 package favourite
 
-import "github.com/google/uuid"
+import (
+	"platform-go-challenge/internal/audience"
+	"platform-go-challenge/internal/chart"
+	"platform-go-challenge/internal/insight"
+
+	"github.com/google/uuid"
+)
 
 type AssetType string
 
@@ -12,20 +18,26 @@ type Favourite struct {
 	Description string
 }
 
-type GroupedFavourites struct {
-	Insights []Favourite
-	Charts   []Favourite
-	Audience []Favourite
+type AssetFavourites struct {
+	Charts    []ChartFavourite    `json:"charts"`
+	Insights  []InsightFavourite  `json:"insights"`
+	Audiences []AudienceFavourite `json:"audiences"`
 }
 
-type PaginatedFavourites struct {
-	Items    []Favourite
-	Page     int
-	PageSize int
-	MaxPage  int
+type ChartFavourite struct {
+	Id          uuid.UUID   `json:"id"`
+	Description string      `json:"description"`
+	Info        chart.Chart `json:"info"`
 }
 
-type ChartFavourite {
-	Id          uuid.UUID
-	Description string
+type InsightFavourite struct {
+	Id          uuid.UUID       `json:"id"`
+	Description string          `json:"description"`
+	Info        insight.Insight `json:"info"`
+}
+
+type AudienceFavourite struct {
+	Id          uuid.UUID         `json:"id"`
+	Description string            `json:"description"`
+	Info        audience.Audience `json:"info"`
 }

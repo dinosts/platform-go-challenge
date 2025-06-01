@@ -1,6 +1,8 @@
 package database
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+)
 
 type UserModel struct {
 	Id       uuid.UUID
@@ -61,12 +63,26 @@ func populateStorageForDevEnv(
 	audienceStorage *AudienceStorage,
 	favouriteStorage *FavouriteStorage,
 ) {
-	devUser := UserModel{Id: uuid.New(), Email: "test@test.com", Password: "pass"}
-	uS := *userStorage
-	uS[devUser.Id] = devUser
+	// Constant UUIDs
+	userId, _ := uuid.Parse("a3973a1c-a77b-4a04-a296-ddec19034419")
+	chartId, _ := uuid.Parse("11111111-1111-1111-1111-111111111111")
+	insightId, _ := uuid.Parse("22222222-2222-2222-2222-222222222222")
+	audienceId, _ := uuid.Parse("33333333-3333-3333-3333-333333333333")
+	favChartId, _ := uuid.Parse("44444444-4444-4444-4444-444444444444")
+	favInsightId, _ := uuid.Parse("55555555-5555-5555-5555-555555555555")
+	favAudienceId, _ := uuid.Parse("66666666-6666-6666-6666-666666666666")
 
+	// User
+	devUser := UserModel{
+		Id:       userId,
+		Email:    "test@test.com",
+		Password: "pass",
+	}
+	(*userStorage)[devUser.Id] = devUser
+
+	// Chart
 	chart := ChartModel{
-		Id:         uuid.New(),
+		Id:         chartId,
 		Title:      "test chart",
 		XAxisTitle: "commit number",
 		YAxisTitle: "lines of code",
@@ -76,49 +92,51 @@ func populateStorageForDevEnv(
 			{"x": 3, "y": 500},
 		},
 	}
-	cS := *chartStorage
-	cS[chart.Id] = chart
+	(*chartStorage)[chart.Id] = chart
 
+	// Insight
 	insight := InsightModel{
-		Id:   uuid.New(),
-		Text: "40% of millennials spend more than 3hours on social media daily",
+		Id:   insightId,
+		Text: "40% of millennials spend more than 3 hours on social media daily",
 	}
-	iS := *insightStorage
-	iS[insight.Id] = insight
+	(*insightStorage)[insight.Id] = insight
 
+	// Audience
 	audience := AudienceModel{
-		Id:                 uuid.New(),
+		Id:                 audienceId,
 		Gender:             "Male",
 		BirthCountry:       "United Kingdom",
 		AgeGroup:           "25-34",
 		SocialMediaHours:   3.5,
 		PurchasesLastMonth: 7,
 	}
-	aS := *audienceStorage
-	aS[audience.Id] = audience
+	(*audienceStorage)[audience.Id] = audience
 
-	fS := *favouriteStorage
-	fS[uuid.New()] = FavouriteModel{
-		Id:          uuid.New(),
+	// Favourites
+	fav1 := FavouriteModel{
+		Id:          favChartId,
 		UserId:      devUser.Id,
 		AssetId:     chart.Id,
 		AssetType:   "chart",
 		Description: "Main performance chart",
 	}
-	fS[uuid.New()] = FavouriteModel{
-		Id:          uuid.New(),
+	fav2 := FavouriteModel{
+		Id:          favInsightId,
 		UserId:      devUser.Id,
 		AssetId:     insight.Id,
 		AssetType:   "insight",
 		Description: "Great for Q2 presentation",
 	}
-	fS[uuid.New()] = FavouriteModel{
-		Id:          uuid.New(),
+	fav3 := FavouriteModel{
+		Id:          favAudienceId,
 		UserId:      devUser.Id,
 		AssetId:     audience.Id,
 		AssetType:   "audience",
 		Description: "Target audience for campaign",
 	}
+	(*favouriteStorage)[fav1.Id] = fav1
+	(*favouriteStorage)[fav2.Id] = fav2
+	(*favouriteStorage)[fav3.Id] = fav3
 }
 
 func NewInMemoryDatabase(env string) *InMemoryDatabase {
@@ -139,8 +157,10 @@ func NewInMemoryDatabase(env string) *InMemoryDatabase {
 	}
 
 	return &InMemoryDatabase{
-		UserStorage:    userStorage,
-		ChartStorage:   chartStorage,
-		InsightStorage: insighStorage,
+		UserStorage:      userStorage,
+		ChartStorage:     chartStorage,
+		InsightStorage:   insighStorage,
+		AudienceStorage:  audienceStorage,
+		FavouriteStorage: favouriteStorage,
 	}
 }

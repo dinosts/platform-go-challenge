@@ -10,8 +10,9 @@ import (
 )
 
 type RouterDependencies struct {
-	JWTAuth          *jwtauth.JWTAuth
-	UserLoginHandler func(w http.ResponseWriter, r *http.Request)
+	JWTAuth              *jwtauth.JWTAuth
+	UserLoginHandler     http.HandlerFunc
+	GetFavouritesHandler http.HandlerFunc
 }
 
 func SetupRouter(dependencies RouterDependencies) *chi.Mux {
@@ -24,20 +25,20 @@ func SetupRouter(dependencies RouterDependencies) *chi.Mux {
 	r.Get("/", GetHealth)
 
 	r.Route("/v1", func(r chi.Router) {
-		// Public
 		r.Group(func(r chi.Router) {
 			r.Route("/user", func(r chi.Router) {
-				r.Post("/login", dependencies.UserLoginHandler)
+				// Public
+				r.Group(func(r chi.Router) {
+					r.Post("/login", dependencies.UserLoginHandler)
+				})
+
+				// Private
+				r.Group(func(r chi.Router) {
+					r.Use(utils.VerifierMiddleware(dependencies.JWTAuth))
+					r.Use(utils.AuthenticatorMiddleware())
+					r.Get("/{id}/favourites", dependencies.GetFavouritesHandler)
+				})
 			})
-		})
-
-		// Private
-		r.Group(func(r chi.Router) {
-			r.Use(utils.VerifierMiddleware(dependencies.JWTAuth))
-			r.Use(utils.AuthenticatorMiddleware())
-
-			// Admin
-			r.Group(func(r chi.Router) {})
 		})
 	})
 
