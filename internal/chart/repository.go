@@ -7,7 +7,7 @@ import (
 )
 
 type ChartRepository interface {
-	GetByIds(ids uuid.UUIDs) []Chart
+	GetByIds(ids uuid.UUIDs) ([]Chart, error)
 }
 
 type inMemoryDBChartRepository struct {
@@ -30,7 +30,7 @@ func InMemoryDBChartModelToDTO(chartModel database.ChartModel) Chart {
 	}
 }
 
-func (repo *inMemoryDBChartRepository) GetByIds(ids uuid.UUIDs) []Chart {
+func (repo *inMemoryDBChartRepository) GetByIds(ids uuid.UUIDs) ([]Chart, error) {
 	result := []Chart{}
 	for _, id := range ids {
 		v, found := repo.DB.ChartStorage[id]
@@ -44,5 +44,5 @@ func (repo *inMemoryDBChartRepository) GetByIds(ids uuid.UUIDs) []Chart {
 		result = append(result, dto)
 	}
 
-	return result
+	return result, nil
 }

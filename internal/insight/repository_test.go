@@ -28,7 +28,7 @@ func TestInMemoryDBInsightRepository_GetByIds(t *testing.T) {
 		repo := insight.NewInMemoryDBInsightRepository(db)
 
 		// Act
-		result := repo.GetByIds([]uuid.UUID{id1, id2})
+		result, _ := repo.GetByIds([]uuid.UUID{id1, id2})
 
 		// Assert
 		assert.Len(t, result, 2)
@@ -52,7 +52,7 @@ func TestInMemoryDBInsightRepository_GetByIds(t *testing.T) {
 		repo := insight.NewInMemoryDBInsightRepository(db)
 
 		// Act
-		result := repo.GetByIds([]uuid.UUID{idExisting, idMissing})
+		result, _ := repo.GetByIds([]uuid.UUID{idExisting, idMissing})
 
 		// Assert
 		assert.Len(t, result, 1)
@@ -68,7 +68,7 @@ func TestInMemoryDBInsightRepository_GetByIds(t *testing.T) {
 		missingID := uuid.New()
 
 		// Act
-		result := repo.GetByIds([]uuid.UUID{missingID})
+		result, _ := repo.GetByIds([]uuid.UUID{missingID})
 
 		// Assert
 		assert.Empty(t, result)
@@ -82,7 +82,7 @@ func TestInMemoryDBInsightRepository_GetByIds(t *testing.T) {
 		repo := insight.NewInMemoryDBInsightRepository(db)
 
 		// Act
-		result := repo.GetByIds([]uuid.UUID{})
+		result, _ := repo.GetByIds([]uuid.UUID{})
 
 		// Assert
 		assert.Empty(t, result)

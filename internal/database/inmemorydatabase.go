@@ -21,26 +21,49 @@ type ChartModel struct {
 	Data       []map[string]float64
 }
 
+type AudienceModel struct {
+	Id                 uuid.UUID
+	Gender             string
+	BirthCountry       string
+	AgeGroup           string
+	SocialMediaHours   float64
+	PurchasesLastMonth int
+}
+
+type FavouriteModel struct {
+	Id          uuid.UUID
+	UserId      uuid.UUID
+	AssetId     uuid.UUID
+	AssetType   string
+	Description string
+}
+
 type (
-	UserStorage    map[uuid.UUID]UserModel
-	ChartStorage   map[uuid.UUID]ChartModel
-	InsightStorage map[uuid.UUID]InsightModel
+	UserStorage      map[uuid.UUID]UserModel
+	ChartStorage     map[uuid.UUID]ChartModel
+	InsightStorage   map[uuid.UUID]InsightModel
+	AudienceStorage  map[uuid.UUID]AudienceModel
+	FavouriteStorage map[uuid.UUID]FavouriteModel
 )
 
 type InMemoryDatabase struct {
-	UserStorage    UserStorage
-	ChartStorage   ChartStorage
-	InsightStorage InsightStorage
+	UserStorage      UserStorage
+	ChartStorage     ChartStorage
+	InsightStorage   InsightStorage
+	AudienceStorage  AudienceStorage
+	FavouriteStorage FavouriteStorage
 }
 
 func populateStorageForDevEnv(
 	userStorage *UserStorage,
 	chartStorage *ChartStorage,
 	insightStorage *InsightStorage,
+	audienceStorage *AudienceStorage,
+	favouriteStorage *FavouriteStorage,
 ) {
 	devUser := UserModel{Id: uuid.New(), Email: "test@test.com", Password: "pass"}
-	us := *userStorage
-	us[devUser.Id] = devUser
+	uS := *userStorage
+	uS[devUser.Id] = devUser
 
 	chart := ChartModel{
 		Id:         uuid.New(),
@@ -53,27 +76,65 @@ func populateStorageForDevEnv(
 			{"x": 3, "y": 500},
 		},
 	}
-	cs := *chartStorage
-	cs[chart.Id] = chart
+	cS := *chartStorage
+	cS[chart.Id] = chart
 
 	insight := InsightModel{
 		Id:   uuid.New(),
 		Text: "40% of millennials spend more than 3hours on social media daily",
 	}
-	is := *insightStorage
-	is[insight.Id] = insight
+	iS := *insightStorage
+	iS[insight.Id] = insight
+
+	audience := AudienceModel{
+		Id:                 uuid.New(),
+		Gender:             "Male",
+		BirthCountry:       "United Kingdom",
+		AgeGroup:           "25-34",
+		SocialMediaHours:   3.5,
+		PurchasesLastMonth: 7,
+	}
+	aS := *audienceStorage
+	aS[audience.Id] = audience
+
+	fS := *favouriteStorage
+	fS[uuid.New()] = FavouriteModel{
+		Id:          uuid.New(),
+		UserId:      devUser.Id,
+		AssetId:     chart.Id,
+		AssetType:   "chart",
+		Description: "Main performance chart",
+	}
+	fS[uuid.New()] = FavouriteModel{
+		Id:          uuid.New(),
+		UserId:      devUser.Id,
+		AssetId:     insight.Id,
+		AssetType:   "insight",
+		Description: "Great for Q2 presentation",
+	}
+	fS[uuid.New()] = FavouriteModel{
+		Id:          uuid.New(),
+		UserId:      devUser.Id,
+		AssetId:     audience.Id,
+		AssetType:   "audience",
+		Description: "Target audience for campaign",
+	}
 }
 
 func NewInMemoryDatabase(env string) *InMemoryDatabase {
 	userStorage := UserStorage{}
 	chartStorage := ChartStorage{}
 	insighStorage := InsightStorage{}
+	audienceStorage := AudienceStorage{}
+	favouriteStorage := FavouriteStorage{}
 
 	if env == "dev" {
 		populateStorageForDevEnv(
 			&userStorage,
 			&chartStorage,
 			&insighStorage,
+			&audienceStorage,
+			&favouriteStorage,
 		)
 	}
 

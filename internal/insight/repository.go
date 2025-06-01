@@ -7,7 +7,7 @@ import (
 )
 
 type InsightRepository interface {
-	GetByIds(ids uuid.UUIDs) []Insight
+	GetByIds(ids uuid.UUIDs) ([]Insight, error)
 }
 
 type inMemoryDBInsightRepository struct {
@@ -27,7 +27,7 @@ func InMemoryDBInsightModelToDTO(insightModel database.InsightModel) Insight {
 	}
 }
 
-func (repo *inMemoryDBInsightRepository) GetByIds(ids uuid.UUIDs) []Insight {
+func (repo *inMemoryDBInsightRepository) GetByIds(ids uuid.UUIDs) ([]Insight, error) {
 	result := []Insight{}
 	for _, id := range ids {
 		v, found := repo.DB.InsightStorage[id]
@@ -41,5 +41,5 @@ func (repo *inMemoryDBInsightRepository) GetByIds(ids uuid.UUIDs) []Insight {
 		result = append(result, dto)
 	}
 
-	return result
+	return result, nil
 }

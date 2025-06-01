@@ -65,10 +65,10 @@ func TestGetByIds(t *testing.T) {
 		}
 
 		// Act
-		actualResult := repo.GetByIds([]uuid.UUID{chart1ID, chart2ID})
+		result, _ := repo.GetByIds([]uuid.UUID{chart1ID, chart2ID})
 
 		// Assert
-		assert.Equal(t, expectedResult, actualResult)
+		assert.Equal(t, expectedResult, result)
 	})
 
 	t.Run("should return only matching charts when some IDs do not exist", func(t *testing.T) {
@@ -105,10 +105,10 @@ func TestGetByIds(t *testing.T) {
 		}
 
 		// Act
-		ActualResult := repo.GetByIds([]uuid.UUID{chart1ID, nonexistentID})
+		result, _ := repo.GetByIds([]uuid.UUID{chart1ID, nonexistentID})
 
 		// Assert
-		assert.Equal(t, expectedResult, ActualResult)
+		assert.Equal(t, expectedResult, result)
 	})
 
 	t.Run("should return empty slice when input is empty", func(t *testing.T) {
@@ -119,7 +119,7 @@ func TestGetByIds(t *testing.T) {
 		repo := chart.NewInMemoryDBChartRepository(mockDB)
 
 		// Act
-		result := repo.GetByIds([]uuid.UUID{})
+		result, _ := repo.GetByIds([]uuid.UUID{})
 
 		// Assert
 		assert.Empty(t, result)

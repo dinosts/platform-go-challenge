@@ -22,6 +22,7 @@ func SetupRouter(dependencies RouterDependencies) *chi.Mux {
 	r.Use(middleware.Recoverer)
 
 	r.Get("/", GetHealth)
+
 	r.Route("/v1", func(r chi.Router) {
 		// Public
 		r.Group(func(r chi.Router) {
