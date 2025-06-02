@@ -41,3 +41,8 @@ type AudienceFavourite struct {
 	Description string            `json:"description"`
 	Info        audience.Audience `json:"info"`
 }
+
+type CreateFavouriteRequestBody struct {
+	AssetId     uuid.UUID `json:"assetId" validate:"required,uuid"`
+	Description string    `json:"description" validate:"required"`
+}

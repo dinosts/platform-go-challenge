@@ -1,22 +1,26 @@
 package favourite
 
 import (
+	"maps"
 	"platform-go-challenge/internal/database"
 	"platform-go-challenge/internal/utils"
+	"slices"
+	"sort"
 
 	"github.com/google/uuid"
 )
 
 type FavouriteRepository interface {
 	GetByUserIdPaginated(userId uuid.UUID, pageSize int, pageNumber int) ([]Favourite, utils.Pagination, error)
+	Create(favourite Favourite) (*Favourite, error)
 }
 
 type inMemoryDBFavouriteRepository struct {
 	DB *database.InMemoryDatabase
 }
 
-func NewInMemoryDBFavouriteRepository(db *database.InMemoryDatabase) inMemoryDBFavouriteRepository {
-	return inMemoryDBFavouriteRepository{
+func NewInMemoryDBFavouriteRepository(db *database.InMemoryDatabase) *inMemoryDBFavouriteRepository {
+	return &inMemoryDBFavouriteRepository{
 		DB: db,
 	}
 }
@@ -31,13 +35,30 @@ func InMemoryDBFavouriteModelToDTO(model database.FavouriteModel) Favourite {
 	}
 }
 
+func DTOToInMemoryDBFavouriteModel(dto Favourite) database.FavouriteModel {
+	return database.FavouriteModel{
+		Id:          dto.Id,
+		UserId:      dto.UserId,
+		AssetId:     dto.AssetId,
+		AssetType:   string(dto.AssetType),
+		Description: dto.Description,
+	}
+}
+
 func (repo *inMemoryDBFavouriteRepository) GetByUserIdPaginated(userId uuid.UUID, pageSize int, pageNumber int) ([]Favourite, utils.Pagination, error) {
 	var result []Favourite
 
 	totalCount := 0
 	offset := pageSize * pageNumber
 
-	for _, fav := range repo.DB.FavouriteStorage {
+	sortedFavs := slices.Collect(maps.Values(repo.DB.FavouriteStorage))
+
+	sort.Slice(
+		sortedFavs,
+		func(i, j int) bool { return sortedFavs[i].Id.String() < sortedFavs[j].Id.String() },
+	)
+
+	for _, fav := range sortedFavs {
 		if fav.UserId != userId {
 			continue
 		}
@@ -53,8 +74,12 @@ func (repo *inMemoryDBFavouriteRepository) GetByUserIdPaginated(userId uuid.UUID
 		}
 	}
 
-	// int casting rounds down. (wanted behaviour cause we start pages from 0)
-	totalPages := int(totalCount / pageSize)
+	maxPage := utils.CalculateMaxPages(totalCount, pageSize)
 
-	return result, utils.Pagination{Page: pageNumber, PageSize: pageSize, MaxPage: totalPages}, nil
+	return result, utils.Pagination{Page: pageNumber, PageSize: pageSize, MaxPage: maxPage}, nil
+}
+
+func (repo *inMemoryDBFavouriteRepository) Create(favourite Favourite) (*Favourite, error) {
+	repo.DB.FavouriteStorage[favourite.Id] = DTOToInMemoryDBFavouriteModel(favourite)
+	return &favourite, nil
 }

@@ -29,7 +29,7 @@ func (service *userService) LoginUser(email string, password string) (string, ti
 		return "", time.Time{}, ErrLoginFailed
 	}
 
-	token, expires_at, err := service.Dependencies.GenerateToken(map[string]any{"user_id": user.Id})
+	token, expires_at, err := service.Dependencies.GenerateToken(map[string]any{"sub": user.Id.String()})
 	if err != nil {
 		return "", time.Time{}, ErrTokenGenerationFailed
 	}

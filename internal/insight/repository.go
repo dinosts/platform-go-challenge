@@ -8,14 +8,15 @@ import (
 
 type InsightRepository interface {
 	GetByIds(ids uuid.UUIDs) ([]Insight, error)
+	GetById(id uuid.UUID) (*Insight, error)
 }
 
 type inMemoryDBInsightRepository struct {
 	DB *database.InMemoryDatabase
 }
 
-func NewInMemoryDBInsightRepository(db *database.InMemoryDatabase) inMemoryDBInsightRepository {
-	return inMemoryDBInsightRepository{
+func NewInMemoryDBInsightRepository(db *database.InMemoryDatabase) *inMemoryDBInsightRepository {
+	return &inMemoryDBInsightRepository{
 		DB: db,
 	}
 }
@@ -42,4 +43,18 @@ func (repo *inMemoryDBInsightRepository) GetByIds(ids uuid.UUIDs) ([]Insight, er
 	}
 
 	return result, nil
+}
+
+func (repo *inMemoryDBInsightRepository) GetById(id uuid.UUID) (*Insight, error) {
+	insight, err := database.IMStorageGetById(
+		id,
+		repo.DB.InsightStorage,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	dto := InMemoryDBInsightModelToDTO(*insight)
+
+	return &dto, nil
 }

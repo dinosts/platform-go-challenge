@@ -11,31 +11,33 @@ type UserLoginDependencies struct {
 }
 
 func UserLoginHandler(dependencies UserLoginDependencies) http.HandlerFunc {
-	return utils.BodyValidator[UserLoginRequestBody](
-		func(w http.ResponseWriter, r *http.Request) {
-			body, ok := utils.GetParsedBody[UserLoginRequestBody](r)
-			if !ok {
-				utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+	validation := utils.BodyValidator[UserLoginRequestBody]
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		body, ok := utils.GetParsedBody[UserLoginRequestBody](r)
+		if !ok {
+			utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+			return
+		}
+
+		token, expiresAt, err := dependencies.UserService.LoginUser(body.Email, body.Password)
+		if err != nil {
+			if errors.Is(err, ErrLoginFailed) {
+				utils.RespondWithError(w, http.StatusUnauthorized, "Invalid email or password")
 				return
 			}
 
-			token, expiresAt, err := dependencies.UserService.LoginUser(body.Email, body.Password)
-			if err != nil {
-				if errors.Is(err, ErrLoginFailed) {
-					utils.RespondWithError(w, http.StatusUnauthorized, "Invalid email or password")
-					return
-				}
+			utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+			return
+		}
 
-				utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
-				return
-			}
+		response := UserLoginResponseBody{
+			Token:     token,
+			ExpiresAt: expiresAt,
+		}
 
-			response := UserLoginResponseBody{
-				Token:     token,
-				ExpiresAt: expiresAt,
-			}
+		utils.RespondWithData(w, http.StatusOK, response)
+	}
 
-			utils.RespondWithData(w, http.StatusOK, response)
-		},
-	)
+	return validation(handler)
 }

@@ -6,14 +6,11 @@ import (
 	"time"
 
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/google/uuid"
 )
 
 func NewJWTAuth(secret string) *jwtauth.JWTAuth {
 	jwtAuth := jwtauth.New("HS256", []byte(secret), nil)
-
-	debugToken, _, _ := NewJWToken(jwtAuth, map[string]any{})
-
-	fmt.Print(debugToken)
 
 	return jwtAuth
 }
@@ -67,4 +64,29 @@ func NewJWTokenIssuer(tokenAuth *jwtauth.JWTAuth) func(extraTokenInfo map[string
 	return func(extraTokenInfo map[string]any) (string, time.Time, error) {
 		return NewJWToken(tokenAuth, extraTokenInfo)
 	}
+}
+
+func GetJWTokenSub(r *http.Request) (string, error) {
+	_, claims, _ := jwtauth.FromContext(r.Context())
+
+	sub, ok := claims["sub"].(string)
+	if !ok {
+		return "", fmt.Errorf("sub claim not found or not a string")
+	}
+
+	return sub, nil
+}
+
+func GetUserIdFromAuthToken(r *http.Request) (uuid.UUID, error) {
+	tokenString, err := GetJWTokenSub(r)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	tokenUUID, err := uuid.Parse(tokenString)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return tokenUUID, nil
 }

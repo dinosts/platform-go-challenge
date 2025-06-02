@@ -125,3 +125,59 @@ func TestGetByIds(t *testing.T) {
 		assert.Empty(t, result)
 	})
 }
+
+func TestGetById(t *testing.T) {
+	t.Run("should return chart when ID exists", func(t *testing.T) {
+		// Arrange
+		chartID := uuid.New()
+		mockDB := &database.InMemoryDatabase{
+			ChartStorage: map[uuid.UUID]database.ChartModel{
+				chartID: {
+					Id:         chartID,
+					Title:      "Chart 1",
+					XAxisTitle: "X Axis",
+					YAxisTitle: "Y Axis",
+					Data: []map[string]float64{
+						{"x": 1, "y": 1},
+						{"x": 2, "y": 2},
+					},
+				},
+			},
+		}
+		repo := chart.NewInMemoryDBChartRepository(mockDB)
+
+		expected := &chart.Chart{
+			Id:         chartID,
+			Title:      "Chart 1",
+			XAxisTitle: "X Axis",
+			YAxisTitle: "Y Axis",
+			Data: chart.ChartData{
+				{"x": 1, "y": 1},
+				{"x": 2, "y": 2},
+			},
+		}
+
+		// Act
+		result, err := repo.GetById(chartID)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("should return error when ID does not exist", func(t *testing.T) {
+		// Arrange
+		mockDB := &database.InMemoryDatabase{
+			ChartStorage: map[uuid.UUID]database.ChartModel{},
+		}
+		repo := chart.NewInMemoryDBChartRepository(mockDB)
+		missingID := uuid.New()
+
+		// Act
+		result, err := repo.GetById(missingID)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}

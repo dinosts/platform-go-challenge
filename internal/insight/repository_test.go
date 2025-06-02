@@ -88,3 +88,44 @@ func TestInMemoryDBInsightRepository_GetByIds(t *testing.T) {
 		assert.Empty(t, result)
 	})
 }
+
+func TestInMemoryDBInsightRepository_GetById(t *testing.T) {
+	t.Run("should return insight when ID exists", func(t *testing.T) {
+		// Arrange
+		id := uuid.New()
+		mockInsight := database.InsightModel{Id: id, Text: "Existing Insight"}
+
+		db := &database.InMemoryDatabase{
+			InsightStorage: map[uuid.UUID]database.InsightModel{
+				id: mockInsight,
+			},
+		}
+		repo := insight.NewInMemoryDBInsightRepository(db)
+
+		expected := &insight.Insight{Id: id, Text: "Existing Insight"}
+
+		// Act
+		result, err := repo.GetById(id)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("should return error when ID does not exist", func(t *testing.T) {
+		// Arrange
+		db := &database.InMemoryDatabase{
+			InsightStorage: map[uuid.UUID]database.InsightModel{},
+		}
+		repo := insight.NewInMemoryDBInsightRepository(db)
+
+		missingID := uuid.New()
+
+		// Act
+		result, err := repo.GetById(missingID)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}

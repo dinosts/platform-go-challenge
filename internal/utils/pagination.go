@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"math"
 	"net/http"
 	"strconv"
 )
@@ -75,4 +76,13 @@ func GetPaginationQuery(r *http.Request, defaultPageSize int, defaultPageNumber 
 
 func RespondWithPaginatedData[T any](w http.ResponseWriter, status int, data T, pagination Pagination) {
 	respondWithJSON(w, status, PaginatedDataResponse[T]{Data: data, Pagination: pagination})
+}
+
+func CalculateMaxPages(totalCount, pageSize int) int {
+	totalPages := int(math.Ceil(float64(totalCount)/float64(pageSize))) - 1
+	if totalPages < 0 {
+		return 0
+	}
+
+	return totalPages
 }

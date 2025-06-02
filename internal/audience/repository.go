@@ -8,14 +8,15 @@ import (
 
 type AudienceRepository interface {
 	GetByIds(ids uuid.UUIDs) ([]Audience, error)
+	GetById(id uuid.UUID) (*Audience, error)
 }
 
 type inMemoryDBAudienceRepository struct {
 	DB *database.InMemoryDatabase
 }
 
-func NewInMemoryDBAudienceRepository(db *database.InMemoryDatabase) inMemoryDBAudienceRepository {
-	return inMemoryDBAudienceRepository{
+func NewInMemoryDBAudienceRepository(db *database.InMemoryDatabase) *inMemoryDBAudienceRepository {
+	return &inMemoryDBAudienceRepository{
 		DB: db,
 	}
 }
@@ -42,4 +43,18 @@ func (repo *inMemoryDBAudienceRepository) GetByIds(ids uuid.UUIDs) ([]Audience, 
 		result = append(result, dto)
 	}
 	return result, nil
+}
+
+func (repo *inMemoryDBAudienceRepository) GetById(id uuid.UUID) (*Audience, error) {
+	audience, err := database.IMStorageGetById(
+		id,
+		repo.DB.AudienceStorage,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	dto := InMemoryDBAudienceModelToDTO(*audience)
+
+	return &dto, nil
 }

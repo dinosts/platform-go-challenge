@@ -1,128 +1,283 @@
 package favourite_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"platform-go-challenge/internal/favourite"
 	"platform-go-challenge/internal/utils"
+	"strings"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-// Stub implementation of favouriteService interface without using any mock package
 type StubFavouriteService struct {
 	GetPaginatedForUserFunc func(userId uuid.UUID, pageSize, pageNumber int) (*favourite.AssetFavourites, *utils.Pagination, error)
+	CreateForUserFunc       func(userId, assetId uuid.UUID, description string) (*favourite.Favourite, error)
 }
 
 func (s *StubFavouriteService) GetPaginatedForUser(userId uuid.UUID, pageSize, pageNumber int) (*favourite.AssetFavourites, *utils.Pagination, error) {
-	return s.GetPaginatedForUserFunc(userId, pageSize, pageNumber)
+	if s.GetPaginatedForUserFunc != nil {
+		return s.GetPaginatedForUserFunc(userId, pageSize, pageNumber)
+	}
+	return nil, nil, errors.New("not implemented")
+}
+
+func (s *StubFavouriteService) CreateForUser(userId, assetId uuid.UUID, description string) (*favourite.Favourite, error) {
+	if s.CreateForUserFunc != nil {
+		return s.CreateForUserFunc(userId, assetId, description)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func injectJWT(ctx context.Context, userID string) context.Context {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	token, _, _ := tokenAuth.Encode(map[string]interface{}{"sub": userID})
+	return jwtauth.NewContext(ctx, token, nil)
+}
+
+func injectParsedBody[T any](ctx context.Context, body T) context.Context {
+	return context.WithValue(ctx, "parsedBody", body)
 }
 
 func TestGetFavouritesHandler(t *testing.T) {
-	t.Run("Should return 200 and data when valid request", func(t *testing.T) {
+	t.Run("Should return 200 and data when valid JWT", func(t *testing.T) {
 		// Arrange
 		validUUID := uuid.New()
 		stubService := &StubFavouriteService{
 			GetPaginatedForUserFunc: func(userId uuid.UUID, pageSize, pageNumber int) (*favourite.AssetFavourites, *utils.Pagination, error) {
 				assert.Equal(t, validUUID, userId)
-				assert.Equal(t, 10, pageSize)
-				assert.Equal(t, 0, pageNumber)
 				return &favourite.AssetFavourites{}, &utils.Pagination{}, nil
 			},
 		}
 		handler := favourite.GetFavouritesHandler(favourite.GetFavouritesHandlerDependencies{
 			FavouriteService: stubService,
 		})
-
-		req := httptest.NewRequest(http.MethodGet, "/favourites/"+validUUID.String(), nil)
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("id", validUUID.String())
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req := httptest.NewRequest(http.MethodGet, "/favourites", nil)
+		req = req.WithContext(injectJWT(req.Context(), validUUID.String()))
 		w := httptest.NewRecorder()
 
 		// Act
 		handler(w, req)
 
 		// Assert
-		resp := w.Result()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 	})
 
-	t.Run("Should return 400 when invalid UUID is provided", func(t *testing.T) {
+	t.Run("Should return 500 when JWT sub is invalid UUID", func(t *testing.T) {
 		// Arrange
-		invalidUUID := "not-a-uuid"
-		stubService := &StubFavouriteService{}
-
 		handler := favourite.GetFavouritesHandler(favourite.GetFavouritesHandlerDependencies{
-			FavouriteService: stubService,
+			FavouriteService: &StubFavouriteService{},
 		})
-
-		req := httptest.NewRequest(http.MethodGet, "/favourites/"+invalidUUID, nil)
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("id", invalidUUID)
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req := httptest.NewRequest(http.MethodGet, "/favourites", nil)
+		req = req.WithContext(injectJWT(req.Context(), "not-a-uuid"))
 		w := httptest.NewRecorder()
 
 		// Act
 		handler(w, req)
 
 		// Assert
-		resp := w.Result()
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
 	})
 
-	t.Run("Should return 400 when invalid pagination parameters are provided", func(t *testing.T) {
+	t.Run("Should return 400 when pagination query is invalid", func(t *testing.T) {
 		// Arrange
-		validUUID := uuid.New().String()
-		stubService := &StubFavouriteService{}
-
+		validUUID := uuid.New()
 		handler := favourite.GetFavouritesHandler(favourite.GetFavouritesHandlerDependencies{
-			FavouriteService: stubService,
+			FavouriteService: &StubFavouriteService{},
 		})
-
-		req := httptest.NewRequest(http.MethodGet, "/favourites/"+validUUID+"?pageSize=abc", nil)
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("id", validUUID)
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req := httptest.NewRequest(http.MethodGet, "/favourites?pageSize=invalid", nil)
+		req = req.WithContext(injectJWT(req.Context(), validUUID.String()))
 		w := httptest.NewRecorder()
 
 		// Act
 		handler(w, req)
 
 		// Assert
-		resp := w.Result()
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
 	})
 
 	t.Run("Should return 500 when service returns error", func(t *testing.T) {
 		// Arrange
 		validUUID := uuid.New()
-		stubService := &StubFavouriteService{
-			GetPaginatedForUserFunc: func(userId uuid.UUID, pageSize, pageNumber int) (*favourite.AssetFavourites, *utils.Pagination, error) {
-				return nil, nil, errors.New("internal error")
-			},
-		}
-
 		handler := favourite.GetFavouritesHandler(favourite.GetFavouritesHandlerDependencies{
-			FavouriteService: stubService,
+			FavouriteService: &StubFavouriteService{
+				GetPaginatedForUserFunc: func(userId uuid.UUID, pageSize, pageNumber int) (*favourite.AssetFavourites, *utils.Pagination, error) {
+					return nil, nil, errors.New("fail")
+				},
+			},
 		})
-
-		req := httptest.NewRequest(http.MethodGet, "/favourites/"+validUUID.String(), nil)
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("id", validUUID.String())
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req := httptest.NewRequest(http.MethodGet, "/favourites", nil)
+		req = req.WithContext(injectJWT(req.Context(), validUUID.String()))
 		w := httptest.NewRecorder()
 
 		// Act
 		handler(w, req)
 
 		// Assert
-		resp := w.Result()
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 500 when JWT is missing", func(t *testing.T) {
+		// Arrange
+		handler := favourite.GetFavouritesHandler(favourite.GetFavouritesHandlerDependencies{
+			FavouriteService: &StubFavouriteService{},
+		})
+		req := httptest.NewRequest(http.MethodGet, "/favourites", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+	})
+}
+
+func TestCreateFavouriteHandler(t *testing.T) {
+	t.Run("Should return 201 when favourite is created successfully", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+		assetId := uuid.New()
+
+		requestBody := map[string]interface{}{
+			"assetId":     assetId.String(),
+			"description": "test",
+		}
+		expected := &favourite.Favourite{
+			Id:          uuid.New(),
+			UserId:      userId,
+			AssetId:     assetId,
+			AssetType:   "chart",
+			Description: "test",
+		}
+		stubService := &StubFavouriteService{
+			CreateForUserFunc: func(uId, aId uuid.UUID, desc string) (*favourite.Favourite, error) {
+				assert.Equal(t, userId, uId)
+				assert.Equal(t, assetId, aId)
+				assert.Equal(t, "test", desc)
+				return expected, nil
+			},
+		}
+		handler := favourite.CreateFavouriteHandler(favourite.CreateFavouriteHandlerDependencies{
+			FavouriteService: stubService,
+		})
+
+		bodyBytes, _ := json.Marshal(requestBody)
+		req := httptest.NewRequest(http.MethodPost, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusCreated, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 404 when asset is not found", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+		assetId := uuid.New()
+
+		requestBody := map[string]interface{}{
+			"assetId":     assetId.String(),
+			"description": "test",
+		}
+		stubService := &StubFavouriteService{
+			CreateForUserFunc: func(_, _ uuid.UUID, _ string) (*favourite.Favourite, error) {
+				return nil, favourite.ErrAssetNotFound
+			},
+		}
+		handler := favourite.CreateFavouriteHandler(favourite.CreateFavouriteHandlerDependencies{
+			FavouriteService: stubService,
+		})
+
+		bodyBytes, _ := json.Marshal(requestBody)
+		req := httptest.NewRequest(http.MethodPost, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusNotFound, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 400 if body is invalid JSON", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+
+		handler := favourite.CreateFavouriteHandler(favourite.CreateFavouriteHandlerDependencies{
+			FavouriteService: &StubFavouriteService{},
+		})
+
+		req := httptest.NewRequest(http.MethodPost, "/favourites", strings.NewReader("{invalid json}"))
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 400 if required fields are missing", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+		requestBody := map[string]interface{}{}
+
+		bodyBytes, _ := json.Marshal(requestBody)
+
+		handler := favourite.CreateFavouriteHandler(favourite.CreateFavouriteHandlerDependencies{
+			FavouriteService: &StubFavouriteService{},
+		})
+
+		req := httptest.NewRequest(http.MethodPost, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 500 if JWT is missing", func(t *testing.T) {
+		// Arrange
+		assetId := uuid.New()
+		requestBody := map[string]interface{}{
+			"assetId":     assetId.String(),
+			"description": "testaki",
+		}
+
+		bodyBytes, _ := json.Marshal(requestBody)
+
+		handler := favourite.CreateFavouriteHandler(favourite.CreateFavouriteHandlerDependencies{
+			FavouriteService: &StubFavouriteService{},
+		})
+
+		req := httptest.NewRequest(http.MethodPost, "/favourites", bytes.NewReader(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
 	})
 }

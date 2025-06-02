@@ -37,10 +37,10 @@ func wireDependencies() (*RouterDependencies, error) {
 	favouriteRepository := favourite.NewInMemoryDBFavouriteRepository(db)
 
 	favouriteService := favourite.NewFavouriteService(favourite.FavouriteServiceDependencies{
-		ChartRepository:     &chartRepository,
-		InsightRepository:   &insightRepository,
-		AudienceRepository:  &audienceRepository,
-		FavouriteRepository: &favouriteRepository,
+		ChartRepository:     chartRepository,
+		InsightRepository:   insightRepository,
+		AudienceRepository:  audienceRepository,
+		FavouriteRepository: favouriteRepository,
 	})
 
 	getFavouritesHandler := favourite.GetFavouritesHandler(
@@ -49,20 +49,27 @@ func wireDependencies() (*RouterDependencies, error) {
 		},
 	)
 
+	createFavouriteHandler := favourite.CreateFavouriteHandler(
+		favourite.CreateFavouriteHandlerDependencies{
+			FavouriteService: &favouriteService,
+		},
+	)
+
 	// Routing
 	routerDependencies := RouterDependencies{
-		JWTAuth:              jwtAuth,
-		UserLoginHandler:     userLoginHandler,
-		GetFavouritesHandler: getFavouritesHandler,
+		JWTAuth:                jwtAuth,
+		UserLoginHandler:       userLoginHandler,
+		GetFavouritesHandler:   getFavouritesHandler,
+		CreateFavouriteHandler: createFavouriteHandler,
 	}
 
 	return &routerDependencies, nil
 }
 
 func StartServer() {
-	routerDependencies, _ := wireDependencies()
+	dependencies, _ := wireDependencies()
 
-	router := SetupRouter(*routerDependencies)
+	router := SetupRouter(*dependencies)
 
-	http.ListenAndServe(":8008", router)
+	http.ListenAndServe(":3008", router)
 }

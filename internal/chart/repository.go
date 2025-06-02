@@ -1,7 +1,6 @@
 package chart
 
 import (
-	"fmt"
 	"platform-go-challenge/internal/database"
 
 	"github.com/google/uuid"
@@ -9,14 +8,15 @@ import (
 
 type ChartRepository interface {
 	GetByIds(ids uuid.UUIDs) ([]Chart, error)
+	GetById(id uuid.UUID) (*Chart, error)
 }
 
 type inMemoryDBChartRepository struct {
 	DB *database.InMemoryDatabase
 }
 
-func NewInMemoryDBChartRepository(db *database.InMemoryDatabase) inMemoryDBChartRepository {
-	return inMemoryDBChartRepository{
+func NewInMemoryDBChartRepository(db *database.InMemoryDatabase) *inMemoryDBChartRepository {
+	return &inMemoryDBChartRepository{
 		DB: db,
 	}
 }
@@ -34,11 +34,6 @@ func InMemoryDBChartModelToDTO(chartModel database.ChartModel) Chart {
 func (repo *inMemoryDBChartRepository) GetByIds(ids uuid.UUIDs) ([]Chart, error) {
 	result := []Chart{}
 
-	for _, id := range repo.DB.ChartStorage {
-		fmt.Println(ids)
-		fmt.Printf("%+v\n", id)
-	}
-
 	for _, id := range ids {
 		v, found := repo.DB.ChartStorage[id]
 		if !found {
@@ -51,4 +46,18 @@ func (repo *inMemoryDBChartRepository) GetByIds(ids uuid.UUIDs) ([]Chart, error)
 	}
 
 	return result, nil
+}
+
+func (repo *inMemoryDBChartRepository) GetById(id uuid.UUID) (*Chart, error) {
+	chart, err := database.IMStorageGetById(
+		id,
+		repo.DB.ChartStorage,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	dto := InMemoryDBChartModelToDTO(*chart)
+
+	return &dto, nil
 }

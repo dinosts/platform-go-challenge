@@ -116,3 +116,57 @@ func TestGetByIds(t *testing.T) {
 		assert.Empty(t, result)
 	})
 }
+
+func TestGetById(t *testing.T) {
+	t.Run("should return audience when ID exists", func(t *testing.T) {
+		// Arrange
+		audID := uuid.New()
+		mockDB := &database.InMemoryDatabase{
+			AudienceStorage: map[uuid.UUID]database.AudienceModel{
+				audID: {
+					Id:                 audID,
+					Gender:             "Other",
+					BirthCountry:       "Germany",
+					AgeGroup:           "45-54",
+					SocialMediaHours:   1.2,
+					PurchasesLastMonth: 0,
+				},
+			},
+		}
+
+		repo := audience.NewInMemoryDBAudienceRepository(mockDB)
+
+		expected := &audience.Audience{
+			Id:                 audID,
+			Gender:             "Other",
+			BirthCountry:       "Germany",
+			AgeGroup:           "45-54",
+			SocialMediaHours:   1.2,
+			PurchasesLastMonth: 0,
+		}
+
+		// Act
+		result, err := repo.GetById(audID)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("should return error when ID does not exist", func(t *testing.T) {
+		// Arrange
+		mockDB := &database.InMemoryDatabase{
+			AudienceStorage: map[uuid.UUID]database.AudienceModel{},
+		}
+		repo := audience.NewInMemoryDBAudienceRepository(mockDB)
+
+		missingID := uuid.New()
+
+		// Act
+		result, err := repo.GetById(missingID)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}
