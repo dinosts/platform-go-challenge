@@ -61,6 +61,12 @@ func wireDependencies() (*RouterDependencies, error) {
 		},
 	)
 
+	deleteFavouriteHandler := favourite.DeleteFavouriteHandler(
+		favourite.DeleteFavouriteHandlerDependencies{
+			FavouriteService: &favouriteService,
+		},
+	)
+
 	// Routing
 	routerDependencies := RouterDependencies{
 		JWTAuth:                jwtAuth,
@@ -68,6 +74,7 @@ func wireDependencies() (*RouterDependencies, error) {
 		GetFavouritesHandler:   getFavouritesHandler,
 		CreateFavouriteHandler: createFavouriteHandler,
 		UpdateFavouriteHandler: updateFavouriteHandler,
+		DeleteFavouriteHandler: deleteFavouriteHandler,
 	}
 
 	return &routerDependencies, nil

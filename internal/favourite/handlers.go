@@ -97,6 +97,48 @@ func UpdateFavouriteHandler(dependencies UpdateFavouriteHandlerDependencies) htt
 		favourite, err := dependencies.FavouriteService.Update(userId, body.Id, body.Description)
 		if err != nil {
 			if errors.Is(err, ErrFavouriteNotFound) {
+				utils.RespondWithError(w, http.StatusNotFound, "Could not find Favourite with this Id")
+				return
+			}
+			if errors.Is(err, ErrFavouriteNotUnderGivenUser) {
+				utils.RespondWithError(w, http.StatusUnauthorized, "Favourite is not under given user")
+				return
+			}
+
+			utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+			return
+		}
+
+		utils.RespondWithData(w, http.StatusOK, favourite)
+	}
+
+	return validation(handler)
+}
+
+type DeleteFavouriteHandlerDependencies struct {
+	FavouriteService FavouriteService
+}
+
+func DeleteFavouriteHandler(dependencies DeleteFavouriteHandlerDependencies) http.HandlerFunc {
+	validation := utils.BodyValidator[DeleteFavouriteRequestBody]
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		userId, err := utils.GetUserIdFromAuthToken(r)
+		if err != nil {
+			// Should not happen since we have auth middlewares before this route
+			utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+			return
+		}
+
+		body, ok := utils.GetParsedBody[DeleteFavouriteRequestBody](r)
+		if !ok {
+			// Should not happen since we validate body before getting in to handler
+			utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+			return
+		}
+
+		err = dependencies.FavouriteService.Delete(userId, body.Id)
+		if err != nil {
+			if errors.Is(err, ErrFavouriteNotFound) {
 				utils.RespondWithError(w, http.StatusNotFound, "Could not find Asset with this Id")
 				return
 			}
@@ -106,9 +148,10 @@ func UpdateFavouriteHandler(dependencies UpdateFavouriteHandlerDependencies) htt
 			}
 
 			utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+			return
 		}
 
-		utils.RespondWithData(w, http.StatusOK, favourite)
+		utils.RespondWithMessage(w, http.StatusOK, "Favourite deleted")
 	}
 
 	return validation(handler)

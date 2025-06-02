@@ -15,8 +15,9 @@ import (
 
 type FavouriteService interface {
 	GetPaginatedForUser(UserId uuid.UUID, pageSize int, pageNumber int) (*AssetFavourites, *utils.Pagination, error)
-	CreateForUser(UserId uuid.UUID, assetId uuid.UUID, description string) (*Favourite, error)
-	Update(userId uuid.UUID, favouriteId uuid.UUID, newDescription string) (*Favourite, error)
+	CreateForUser(UserId, assetId uuid.UUID, description string) (*Favourite, error)
+	Update(userId, favouriteId uuid.UUID, newDescription string) (*Favourite, error)
+	Delete(userId, favouriteId uuid.UUID) error
 }
 
 type FavouriteServiceDependencies struct {
@@ -162,4 +163,21 @@ func (service *favouriteService) Update(userId uuid.UUID, favouriteId uuid.UUID,
 	}
 
 	return service.Dependencies.FavouriteRepository.Update(*favourite)
+}
+
+func (service *favouriteService) Delete(userId uuid.UUID, favouriteId uuid.UUID) error {
+	favourite, err := service.Dependencies.FavouriteRepository.GetById(favouriteId)
+	if err != nil {
+		if errors.Is(err, database.ErrItemNotFound) {
+			return ErrFavouriteNotFound
+		}
+
+		return utils.ErrUnexpected
+	}
+
+	if userId != favourite.UserId {
+		return ErrFavouriteNotUnderGivenUser
+	}
+
+	return service.Dependencies.FavouriteRepository.Delete(favouriteId)
 }

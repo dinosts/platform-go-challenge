@@ -15,6 +15,7 @@ type FavouriteRepository interface {
 	GetById(id uuid.UUID) (*Favourite, error)
 	Create(favourite Favourite) (*Favourite, error)
 	Update(favourite Favourite) (*Favourite, error)
+	Delete(id uuid.UUID) error
 }
 
 type inMemoryDBFavouriteRepository struct {
@@ -100,4 +101,15 @@ func (repo *inMemoryDBFavouriteRepository) Create(favourite Favourite) (*Favouri
 func (repo *inMemoryDBFavouriteRepository) Update(favourite Favourite) (*Favourite, error) {
 	repo.DB.FavouriteStorage[favourite.Id] = DTOToInMemoryDBFavouriteModel(favourite)
 	return &favourite, nil
+}
+
+func (repo *inMemoryDBFavouriteRepository) Delete(id uuid.UUID) error {
+	favourite, err := database.IMStorageGetById(id, repo.DB.FavouriteStorage)
+	if err != nil {
+		return ErrFavouriteNotFound
+	}
+
+	delete(repo.DB.FavouriteStorage, favourite.Id)
+
+	return nil
 }

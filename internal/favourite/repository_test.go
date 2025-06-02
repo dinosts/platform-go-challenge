@@ -178,3 +178,46 @@ func TestUpdate(t *testing.T) {
 		assert.Equal(t, updatedFavourite.Description, stored.Description)
 	})
 }
+
+func TestDelete(t *testing.T) {
+	t.Run("should delete favourite in memory database", func(t *testing.T) {
+		// Arrange
+		model := database.FavouriteModel{
+			Id:          uuid.New(),
+			UserId:      uuid.New(),
+			AssetId:     uuid.New(),
+			AssetType:   "charts",
+			Description: "created fav",
+		}
+
+		db := &database.InMemoryDatabase{FavouriteStorage: map[uuid.UUID]database.FavouriteModel{model.Id: model}}
+		repo := favourite.NewInMemoryDBFavouriteRepository(db)
+
+		// Act
+		err := repo.Delete(model.Id)
+
+		// Assert
+		_, ok := db.FavouriteStorage[model.Id]
+		assert.False(t, ok)
+		assert.NoError(t, err)
+	})
+	t.Run("should return err when favourite not foudnd in memory database", func(t *testing.T) {
+		// Arrange
+		model := database.FavouriteModel{
+			Id:          uuid.New(),
+			UserId:      uuid.New(),
+			AssetId:     uuid.New(),
+			AssetType:   "charts",
+			Description: "created fav",
+		}
+
+		db := &database.InMemoryDatabase{FavouriteStorage: map[uuid.UUID]database.FavouriteModel{model.Id: model}}
+		repo := favourite.NewInMemoryDBFavouriteRepository(db)
+
+		// Act
+		err := repo.Delete(uuid.New())
+
+		// Assert
+		assert.Equal(t, favourite.ErrFavouriteNotFound, err)
+	})
+}

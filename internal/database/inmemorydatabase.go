@@ -179,7 +179,7 @@ func IMStorageGetById[T any](id uuid.UUID, storage map[uuid.UUID]T) (*T, error) 
 	v, found := storage[id]
 
 	if !found {
-		return nil, errors.New("Not Found")
+		return nil, ErrItemNotFound
 	}
 
 	return &v, nil

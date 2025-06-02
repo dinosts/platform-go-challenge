@@ -21,6 +21,7 @@ type StubFavouriteService struct {
 	GetPaginatedForUserFunc func(userId uuid.UUID, pageSize, pageNumber int) (*favourite.AssetFavourites, *utils.Pagination, error)
 	CreateForUserFunc       func(userId, assetId uuid.UUID, description string) (*favourite.Favourite, error)
 	UpdateFunc              func(userId, favouriteId uuid.UUID, description string) (*favourite.Favourite, error)
+	DeleteFunc              func(userId, favouriteId uuid.UUID) error
 }
 
 func (s *StubFavouriteService) GetPaginatedForUser(userId uuid.UUID, pageSize, pageNumber int) (*favourite.AssetFavourites, *utils.Pagination, error) {
@@ -42,6 +43,13 @@ func (s *StubFavouriteService) Update(userId, favouriteId uuid.UUID, description
 		return s.UpdateFunc(userId, favouriteId, description)
 	}
 	return nil, errors.New("not implemented")
+}
+
+func (s *StubFavouriteService) Delete(userId, favouriteId uuid.UUID) error {
+	if s.DeleteFunc != nil {
+		return s.DeleteFunc(userId, favouriteId)
+	}
+	return errors.New("not implemented")
 }
 
 func injectJWT(ctx context.Context, userID string) context.Context {
@@ -428,6 +436,142 @@ func TestUpdateFavouriteHandler(t *testing.T) {
 		handler := favourite.UpdateFavouriteHandler(favourite.UpdateFavouriteHandlerDependencies{
 			FavouriteService: stubService,
 		})
+		req := httptest.NewRequest(http.MethodPut, "/favourites", strings.NewReader(`{}`))
+		req.Header.Set("Content-Type", "application/json")
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+}
+
+func TestDeleteFavouriteHandler(t *testing.T) {
+	t.Run("Should return 200 when delete is successful", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+		favouriteId := uuid.New()
+
+		requestBody := map[string]any{"id": favouriteId.String()}
+
+		stubService := &StubFavouriteService{
+			DeleteFunc: func(uId, fId uuid.UUID) error {
+				assert.Equal(t, userId, uId)
+				assert.Equal(t, favouriteId, fId)
+
+				return nil
+			},
+		}
+		handler := favourite.DeleteFavouriteHandler(
+			favourite.DeleteFavouriteHandlerDependencies{
+				FavouriteService: stubService,
+			},
+		)
+
+		bodyBytes, _ := json.Marshal(requestBody)
+		req := httptest.NewRequest(http.MethodDelete, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 404 when favourite is not found", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+
+		requestBody := map[string]interface{}{
+			"id": uuid.New().String(),
+		}
+
+		stubService := &StubFavouriteService{
+			DeleteFunc: func(_, _ uuid.UUID) error {
+				return favourite.ErrFavouriteNotFound
+			},
+		}
+		handler := favourite.DeleteFavouriteHandler(favourite.DeleteFavouriteHandlerDependencies{
+			FavouriteService: stubService,
+		})
+
+		bodyBytes, _ := json.Marshal(requestBody)
+		req := httptest.NewRequest(http.MethodDelete, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusNotFound, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 401 when favourite is not under user", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+		requestBody := map[string]interface{}{
+			"id": uuid.New().String(),
+		}
+
+		stubService := &StubFavouriteService{
+			DeleteFunc: func(_, _ uuid.UUID) error {
+				return favourite.ErrFavouriteNotUnderGivenUser
+			},
+		}
+
+		handler := favourite.DeleteFavouriteHandler(favourite.DeleteFavouriteHandlerDependencies{FavouriteService: stubService})
+
+		bodyBytes, _ := json.Marshal(requestBody)
+		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusUnauthorized, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 500 when JWT is missing", func(t *testing.T) {
+		// Arrange
+		requestBody := map[string]interface{}{
+			"id": uuid.New().String(),
+		}
+		handler := favourite.DeleteFavouriteHandler(favourite.DeleteFavouriteHandlerDependencies{
+			FavouriteService: &StubFavouriteService{},
+		})
+		bodyBytes, _ := json.Marshal(requestBody)
+		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 400 on unexpected service error", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+		stubService := &StubFavouriteService{
+			DeleteFunc: func(_, _ uuid.UUID) error {
+				return errors.New("random error")
+			},
+		}
+
+		handler := favourite.DeleteFavouriteHandler(favourite.DeleteFavouriteHandlerDependencies{FavouriteService: stubService})
 		req := httptest.NewRequest(http.MethodPut, "/favourites", strings.NewReader(`{}`))
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(injectJWT(req.Context(), userId.String()))

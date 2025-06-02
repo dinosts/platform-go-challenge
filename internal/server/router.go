@@ -17,6 +17,7 @@ type RouterDependencies struct {
 	GetFavouritesHandler   http.HandlerFunc
 	CreateFavouriteHandler http.HandlerFunc
 	UpdateFavouriteHandler http.HandlerFunc
+	DeleteFavouriteHandler http.HandlerFunc
 }
 
 func SetupRouter(dependencies RouterDependencies) *chi.Mux {
@@ -25,6 +26,8 @@ func SetupRouter(dependencies RouterDependencies) *chi.Mux {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	// ratelimit: 100req per 1min
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 
 	r.Get("/", GetHealth)
@@ -40,9 +43,11 @@ func SetupRouter(dependencies RouterDependencies) *chi.Mux {
 				r.Group(func(r chi.Router) {
 					r.Use(utils.VerifierMiddleware(dependencies.JWTAuth))
 					r.Use(utils.AuthenticatorMiddleware())
+
 					r.Get("/favourites", dependencies.GetFavouritesHandler)
 					r.Post("/favourites", dependencies.CreateFavouriteHandler)
 					r.Patch("/favourites", dependencies.UpdateFavouriteHandler)
+					r.Delete("/favourites", dependencies.DeleteFavouriteHandler)
 				})
 			})
 		})

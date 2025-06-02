@@ -51,3 +51,7 @@ type UpdateFavouriteRequestBody struct {
 	Id          uuid.UUID `json:"id" validate:"required,uuid"`
 	Description string    `json:"description"`
 }
+
+type DeleteFavouriteRequestBody struct {
+	Id uuid.UUID `json:"id" validate:"required,uuid"`
+}

@@ -19,6 +19,7 @@ type mockFavouriteRepo struct {
 	createFn               func(fav favourite.Favourite) (*favourite.Favourite, error)
 	getByIdFn              func(id uuid.UUID) (*favourite.Favourite, error)
 	updateFn               func(fav favourite.Favourite) (*favourite.Favourite, error)
+	deleteFn               func(id uuid.UUID) error
 }
 
 func (m *mockFavouriteRepo) GetByUserIdPaginated(userId uuid.UUID, pageSize, pageNumber int) ([]favourite.Favourite, utils.Pagination, error) {
@@ -35,6 +36,10 @@ func (m *mockFavouriteRepo) GetById(id uuid.UUID) (*favourite.Favourite, error) 
 
 func (m *mockFavouriteRepo) Update(fav favourite.Favourite) (*favourite.Favourite, error) {
 	return m.updateFn(fav)
+}
+
+func (m *mockFavouriteRepo) Delete(id uuid.UUID) error {
+	return m.deleteFn(id)
 }
 
 type mockChartRepo struct {
@@ -258,7 +263,7 @@ func TestShouldReturnErrorWhenCreateForUserFailsToSave(t *testing.T) {
 	assert.ErrorIs(t, err, favourite.ErrCouldNotSaveFavourite)
 }
 
-func TestShouldUpdateFavouriteWhenConditionsMet(t *testing.T) {
+func TestUpdateService(t *testing.T) {
 	userId := uuid.New()
 	otherUserId := uuid.New()
 	favId := uuid.New()
@@ -367,6 +372,89 @@ func TestShouldUpdateFavouriteWhenConditionsMet(t *testing.T) {
 
 		// Assert
 		assert.Nil(t, result)
+		assert.ErrorIs(t, err, utils.ErrUnexpected)
+	})
+}
+
+func TestDeleteService(t *testing.T) {
+	userId := uuid.New()
+	otherUserId := uuid.New()
+	favId := uuid.New()
+
+	t.Run("should return error when favourite not found", func(t *testing.T) {
+		// Arrange
+		mockFavRepo := &mockFavouriteRepo{
+			getByIdFn: func(id uuid.UUID) (*favourite.Favourite, error) {
+				return nil, database.ErrItemNotFound
+			},
+		}
+		service := favourite.NewFavouriteService(favourite.FavouriteServiceDependencies{
+			FavouriteRepository: mockFavRepo,
+		})
+
+		// Act
+		err := service.Delete(userId, favId)
+
+		// Assert
+		assert.ErrorIs(t, err, favourite.ErrFavouriteNotFound)
+	})
+
+	t.Run("should return error when favourite does not belong to user", func(t *testing.T) {
+		// Arrange
+		mockFavRepo := &mockFavouriteRepo{
+			getByIdFn: func(id uuid.UUID) (*favourite.Favourite, error) {
+				return &favourite.Favourite{Id: favId, UserId: otherUserId}, nil
+			},
+		}
+		service := favourite.NewFavouriteService(favourite.FavouriteServiceDependencies{
+			FavouriteRepository: mockFavRepo,
+		})
+
+		// Act
+		err := service.Delete(userId, favId)
+
+		// Assert
+		assert.ErrorIs(t, err, favourite.ErrFavouriteNotUnderGivenUser)
+	})
+
+	t.Run("should delete when input is valid", func(t *testing.T) {
+		// Arrange
+		existingFav := favourite.Favourite{Id: favId, UserId: userId, Description: "old"}
+		mockFavRepo := &mockFavouriteRepo{
+			getByIdFn: func(id uuid.UUID) (*favourite.Favourite, error) {
+				return &existingFav, nil
+			},
+			deleteFn: func(id uuid.UUID) error {
+				assert.Equal(t, existingFav.Id, id)
+				return nil
+			},
+		}
+		service := favourite.NewFavouriteService(favourite.FavouriteServiceDependencies{
+			FavouriteRepository: mockFavRepo,
+		})
+
+		// Act
+		err := service.Delete(userId, favId)
+
+		// Assert
+		assert.NoError(t, err)
+	})
+
+	t.Run("should return unexpected error when repository GetById fails unexpectedly", func(t *testing.T) {
+		// Arrange
+		mockFavRepo := &mockFavouriteRepo{
+			getByIdFn: func(id uuid.UUID) (*favourite.Favourite, error) {
+				return nil, errors.New("db failure")
+			},
+		}
+		service := favourite.NewFavouriteService(favourite.FavouriteServiceDependencies{
+			FavouriteRepository: mockFavRepo,
+		})
+
+		// Act
+		err := service.Delete(userId, favId)
+
+		// Assert
 		assert.ErrorIs(t, err, utils.ErrUnexpected)
 	})
 }
