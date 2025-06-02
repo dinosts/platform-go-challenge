@@ -1,8 +1,10 @@
 package favourite
 
 import (
+	"errors"
 	"platform-go-challenge/internal/audience"
 	"platform-go-challenge/internal/chart"
+	"platform-go-challenge/internal/database"
 	"platform-go-challenge/internal/insight"
 	"platform-go-challenge/internal/utils"
 	"sync"
@@ -14,6 +16,7 @@ import (
 type FavouriteService interface {
 	GetPaginatedForUser(UserId uuid.UUID, pageSize int, pageNumber int) (*AssetFavourites, *utils.Pagination, error)
 	CreateForUser(UserId uuid.UUID, assetId uuid.UUID, description string) (*Favourite, error)
+	Update(userId uuid.UUID, favouriteId uuid.UUID, newDescription string) (*Favourite, error)
 }
 
 type FavouriteServiceDependencies struct {
@@ -125,6 +128,7 @@ func (service *favouriteService) CreateForUser(userId uuid.UUID, assetId uuid.UU
 	}
 
 	favourite := Favourite{
+		Id:          uuid.New(),
 		UserId:      userId,
 		AssetId:     assetId,
 		AssetType:   assetType,
@@ -137,4 +141,25 @@ func (service *favouriteService) CreateForUser(userId uuid.UUID, assetId uuid.UU
 	}
 
 	return fav, nil
+}
+
+func (service *favouriteService) Update(userId uuid.UUID, favouriteId uuid.UUID, newDescription string) (*Favourite, error) {
+	favourite, err := service.Dependencies.FavouriteRepository.GetById(favouriteId)
+	if err != nil {
+		if errors.Is(err, database.ErrItemNotFound) {
+			return nil, ErrFavouriteNotFound
+		}
+
+		return nil, utils.ErrUnexpected
+	}
+
+	if userId != favourite.UserId {
+		return nil, ErrFavouriteNotUnderGivenUser
+	}
+
+	if newDescription != "" {
+		favourite.Description = newDescription
+	}
+
+	return service.Dependencies.FavouriteRepository.Update(*favourite)
 }

@@ -72,3 +72,44 @@ func CreateFavouriteHandler(dependencies CreateFavouriteHandlerDependencies) htt
 
 	return validation(handler)
 }
+
+type UpdateFavouriteHandlerDependencies struct {
+	FavouriteService FavouriteService
+}
+
+func UpdateFavouriteHandler(dependencies UpdateFavouriteHandlerDependencies) http.HandlerFunc {
+	validation := utils.BodyValidator[UpdateFavouriteRequestBody]
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		userId, err := utils.GetUserIdFromAuthToken(r)
+		if err != nil {
+			// Should not happen since we have auth middlewares before this route
+			utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+			return
+		}
+
+		body, ok := utils.GetParsedBody[UpdateFavouriteRequestBody](r)
+		if !ok {
+			// Should not happen since we validate body before getting in to handler
+			utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+			return
+		}
+
+		favourite, err := dependencies.FavouriteService.Update(userId, body.Id, body.Description)
+		if err != nil {
+			if errors.Is(err, ErrFavouriteNotFound) {
+				utils.RespondWithError(w, http.StatusNotFound, "Could not find Asset with this Id")
+				return
+			}
+			if errors.Is(err, ErrFavouriteNotUnderGivenUser) {
+				utils.RespondWithError(w, http.StatusUnauthorized, "Favourite is not under given user")
+				return
+			}
+
+			utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		}
+
+		utils.RespondWithData(w, http.StatusOK, favourite)
+	}
+
+	return validation(handler)
+}

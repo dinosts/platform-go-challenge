@@ -46,3 +46,8 @@ type CreateFavouriteRequestBody struct {
 	AssetId     uuid.UUID `json:"assetId" validate:"required,uuid"`
 	Description string    `json:"description" validate:"required"`
 }
+
+type UpdateFavouriteRequestBody struct {
+	Id          uuid.UUID `json:"id" validate:"required,uuid"`
+	Description string    `json:"description"`
+}

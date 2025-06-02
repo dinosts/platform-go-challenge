@@ -12,7 +12,9 @@ import (
 
 type FavouriteRepository interface {
 	GetByUserIdPaginated(userId uuid.UUID, pageSize int, pageNumber int) ([]Favourite, utils.Pagination, error)
+	GetById(id uuid.UUID) (*Favourite, error)
 	Create(favourite Favourite) (*Favourite, error)
+	Update(favourite Favourite) (*Favourite, error)
 }
 
 type inMemoryDBFavouriteRepository struct {
@@ -43,6 +45,17 @@ func DTOToInMemoryDBFavouriteModel(dto Favourite) database.FavouriteModel {
 		AssetType:   string(dto.AssetType),
 		Description: dto.Description,
 	}
+}
+
+func (repo *inMemoryDBFavouriteRepository) GetById(id uuid.UUID) (*Favourite, error) {
+	favourite, err := database.IMStorageGetById(id, repo.DB.FavouriteStorage)
+	if err != nil {
+		return nil, err
+	}
+
+	dto := InMemoryDBFavouriteModelToDTO(*favourite)
+
+	return &dto, nil
 }
 
 func (repo *inMemoryDBFavouriteRepository) GetByUserIdPaginated(userId uuid.UUID, pageSize int, pageNumber int) ([]Favourite, utils.Pagination, error) {
@@ -80,6 +93,11 @@ func (repo *inMemoryDBFavouriteRepository) GetByUserIdPaginated(userId uuid.UUID
 }
 
 func (repo *inMemoryDBFavouriteRepository) Create(favourite Favourite) (*Favourite, error) {
+	repo.DB.FavouriteStorage[favourite.Id] = DTOToInMemoryDBFavouriteModel(favourite)
+	return &favourite, nil
+}
+
+func (repo *inMemoryDBFavouriteRepository) Update(favourite Favourite) (*Favourite, error) {
 	repo.DB.FavouriteStorage[favourite.Id] = DTOToInMemoryDBFavouriteModel(favourite)
 	return &favourite, nil
 }

@@ -3,9 +3,11 @@ package server
 import (
 	"net/http"
 	"platform-go-challenge/internal/utils"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
 	"github.com/go-chi/jwtauth/v5"
 )
 
@@ -14,6 +16,7 @@ type RouterDependencies struct {
 	UserLoginHandler       http.HandlerFunc
 	GetFavouritesHandler   http.HandlerFunc
 	CreateFavouriteHandler http.HandlerFunc
+	UpdateFavouriteHandler http.HandlerFunc
 }
 
 func SetupRouter(dependencies RouterDependencies) *chi.Mux {
@@ -22,9 +25,9 @@ func SetupRouter(dependencies RouterDependencies) *chi.Mux {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 
 	r.Get("/", GetHealth)
-
 	r.Route("/v1", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Route("/user", func(r chi.Router) {
@@ -39,6 +42,7 @@ func SetupRouter(dependencies RouterDependencies) *chi.Mux {
 					r.Use(utils.AuthenticatorMiddleware())
 					r.Get("/favourites", dependencies.GetFavouritesHandler)
 					r.Post("/favourites", dependencies.CreateFavouriteHandler)
+					r.Patch("/favourites", dependencies.UpdateFavouriteHandler)
 				})
 			})
 		})

@@ -20,6 +20,7 @@ import (
 type StubFavouriteService struct {
 	GetPaginatedForUserFunc func(userId uuid.UUID, pageSize, pageNumber int) (*favourite.AssetFavourites, *utils.Pagination, error)
 	CreateForUserFunc       func(userId, assetId uuid.UUID, description string) (*favourite.Favourite, error)
+	UpdateFunc              func(userId, favouriteId uuid.UUID, description string) (*favourite.Favourite, error)
 }
 
 func (s *StubFavouriteService) GetPaginatedForUser(userId uuid.UUID, pageSize, pageNumber int) (*favourite.AssetFavourites, *utils.Pagination, error) {
@@ -32,6 +33,13 @@ func (s *StubFavouriteService) GetPaginatedForUser(userId uuid.UUID, pageSize, p
 func (s *StubFavouriteService) CreateForUser(userId, assetId uuid.UUID, description string) (*favourite.Favourite, error) {
 	if s.CreateForUserFunc != nil {
 		return s.CreateForUserFunc(userId, assetId, description)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (s *StubFavouriteService) Update(userId, favouriteId uuid.UUID, description string) (*favourite.Favourite, error) {
+	if s.UpdateFunc != nil {
+		return s.UpdateFunc(userId, favouriteId, description)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -279,5 +287,156 @@ func TestCreateFavouriteHandler(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+	})
+}
+
+func TestUpdateFavouriteHandler(t *testing.T) {
+	t.Run("Should return 200 when update is successful", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+		favouriteId := uuid.New()
+
+		requestBody := map[string]interface{}{
+			"id":          favouriteId.String(),
+			"description": "updated description",
+		}
+
+		expected := &favourite.Favourite{
+			Id:          favouriteId,
+			UserId:      userId,
+			AssetId:     uuid.New(),
+			AssetType:   "chart",
+			Description: "test",
+		}
+		stubService := &StubFavouriteService{
+			UpdateFunc: func(uId, fId uuid.UUID, desc string) (*favourite.Favourite, error) {
+				assert.Equal(t, userId, uId)
+				assert.Equal(t, favouriteId, fId)
+				assert.Equal(t, "updated description", desc)
+				return expected, nil
+			},
+		}
+		handler := favourite.UpdateFavouriteHandler(favourite.UpdateFavouriteHandlerDependencies{
+			FavouriteService: stubService,
+		})
+
+		bodyBytes, _ := json.Marshal(requestBody)
+		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 404 when favourite is not found", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+		favouriteId := uuid.New()
+
+		requestBody := map[string]interface{}{
+			"id":          favouriteId.String(),
+			"description": "does not matter",
+		}
+
+		stubService := &StubFavouriteService{
+			UpdateFunc: func(_, _ uuid.UUID, _ string) (*favourite.Favourite, error) {
+				return nil, favourite.ErrFavouriteNotFound
+			},
+		}
+		handler := favourite.UpdateFavouriteHandler(favourite.UpdateFavouriteHandlerDependencies{
+			FavouriteService: stubService,
+		})
+
+		bodyBytes, _ := json.Marshal(requestBody)
+		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusNotFound, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 401 when favourite is not under user", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+		favouriteId := uuid.New()
+		requestBody := map[string]interface{}{
+			"id":          favouriteId.String(),
+			"description": "test",
+		}
+		stubService := &StubFavouriteService{
+			UpdateFunc: func(_, _ uuid.UUID, _ string) (*favourite.Favourite, error) {
+				return nil, favourite.ErrFavouriteNotUnderGivenUser
+			},
+		}
+		handler := favourite.UpdateFavouriteHandler(favourite.UpdateFavouriteHandlerDependencies{
+			FavouriteService: stubService,
+		})
+
+		bodyBytes, _ := json.Marshal(requestBody)
+		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusUnauthorized, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 500 when JWT is missing", func(t *testing.T) {
+		// Arrange
+		favouriteId := uuid.New()
+		requestBody := map[string]interface{}{
+			"id":          favouriteId.String(),
+			"description": "test",
+		}
+		handler := favourite.UpdateFavouriteHandler(favourite.UpdateFavouriteHandlerDependencies{
+			FavouriteService: &StubFavouriteService{},
+		})
+		bodyBytes, _ := json.Marshal(requestBody)
+		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+	})
+
+	t.Run("Should return 400 on unexpected service error", func(t *testing.T) {
+		// Arrange
+		userId := uuid.New()
+		stubService := &StubFavouriteService{
+			UpdateFunc: func(_, _ uuid.UUID, _ string) (*favourite.Favourite, error) {
+				return nil, errors.New("random error")
+			},
+		}
+		handler := favourite.UpdateFavouriteHandler(favourite.UpdateFavouriteHandlerDependencies{
+			FavouriteService: stubService,
+		})
+		req := httptest.NewRequest(http.MethodPut, "/favourites", strings.NewReader(`{}`))
+		req.Header.Set("Content-Type", "application/json")
+		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
 	})
 }

@@ -55,12 +55,19 @@ func wireDependencies() (*RouterDependencies, error) {
 		},
 	)
 
+	updateFavouriteHandler := favourite.UpdateFavouriteHandler(
+		favourite.UpdateFavouriteHandlerDependencies{
+			FavouriteService: &favouriteService,
+		},
+	)
+
 	// Routing
 	routerDependencies := RouterDependencies{
 		JWTAuth:                jwtAuth,
 		UserLoginHandler:       userLoginHandler,
 		GetFavouritesHandler:   getFavouritesHandler,
 		CreateFavouriteHandler: createFavouriteHandler,
+		UpdateFavouriteHandler: updateFavouriteHandler,
 	}
 
 	return &routerDependencies, nil

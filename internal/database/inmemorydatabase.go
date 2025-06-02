@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var ErrItemNotFound = errors.New("Not Found")
+
 type UserModel struct {
 	Id       uuid.UUID
 	Email    string

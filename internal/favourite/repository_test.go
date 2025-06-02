@@ -137,3 +137,44 @@ func TestCreate(t *testing.T) {
 		assert.Equal(t, newFav.Description, stored.Description)
 	})
 }
+
+func TestUpdate(t *testing.T) {
+	t.Run("should update favourite in memory database", func(t *testing.T) {
+		// Arrange
+
+		existingFavourite := favourite.Favourite{
+			Id:          uuid.New(),
+			UserId:      uuid.New(),
+			AssetId:     uuid.New(),
+			AssetType:   "charts",
+			Description: "created fav",
+		}
+		existingFavouriteModel := database.FavouriteModel{
+			Id:          existingFavourite.Id,
+			UserId:      existingFavourite.UserId,
+			AssetId:     existingFavourite.AssetId,
+			AssetType:   string(existingFavourite.AssetType),
+			Description: existingFavourite.Description,
+		}
+
+		db := &database.InMemoryDatabase{FavouriteStorage: map[uuid.UUID]database.FavouriteModel{existingFavouriteModel.Id: existingFavouriteModel}}
+		repo := favourite.NewInMemoryDBFavouriteRepository(db)
+
+		updatedFavourite := existingFavourite
+		updatedFavourite.Description = "test"
+
+		// Act
+		_, err := repo.Create(updatedFavourite)
+
+		// Assert
+		assert.NoError(t, err)
+
+		stored, ok := db.FavouriteStorage[existingFavourite.Id]
+		assert.True(t, ok)
+		assert.Equal(t, updatedFavourite.Id, stored.Id)
+		assert.Equal(t, updatedFavourite.UserId, stored.UserId)
+		assert.Equal(t, updatedFavourite.AssetId, stored.AssetId)
+		assert.Equal(t, string(updatedFavourite.AssetType), stored.AssetType)
+		assert.Equal(t, updatedFavourite.Description, stored.Description)
+	})
+}
