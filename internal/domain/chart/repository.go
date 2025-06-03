@@ -12,16 +12,16 @@ type ChartRepository interface {
 }
 
 type inMemoryDBChartRepository struct {
-	DB *database.InMemoryDatabase
+	DB *database.IMDatabase
 }
 
-func NewInMemoryDBChartRepository(db *database.InMemoryDatabase) *inMemoryDBChartRepository {
+func NewInMemoryDBChartRepository(db *database.IMDatabase) *inMemoryDBChartRepository {
 	return &inMemoryDBChartRepository{
 		DB: db,
 	}
 }
 
-func InMemoryDBChartModelToDTO(chartModel database.ChartModel) Chart {
+func InMemoryDBChartModelToDTO(chartModel database.IMChartModel) Chart {
 	return Chart{
 		Id:         chartModel.Id,
 		Title:      chartModel.Title,

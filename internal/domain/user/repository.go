@@ -9,16 +9,16 @@ type UserRepository interface {
 }
 
 type inMemoryDBUserRepository struct {
-	DB *database.InMemoryDatabase
+	DB *database.IMDatabase
 }
 
-func NewInMemoryDBUserRepository(db *database.InMemoryDatabase) inMemoryDBUserRepository {
+func NewInMemoryDBUserRepository(db *database.IMDatabase) inMemoryDBUserRepository {
 	return inMemoryDBUserRepository{
 		DB: db,
 	}
 }
 
-func InMemoryDBUserModelToDTO(userModel database.UserModel) User {
+func InMemoryDBUserModelToDTO(userModel database.IMUserModel) User {
 	return User{
 		Id:       userModel.Id,
 		Email:    userModel.Email,

@@ -2,7 +2,7 @@ package insight_test
 
 import (
 	"platform-go-challenge/internal/database"
-	"platform-go-challenge/internal/insight"
+	"platform-go-challenge/internal/domain/insight"
 	"testing"
 
 	"github.com/google/uuid"
@@ -15,11 +15,11 @@ func TestInMemoryDBInsightRepository_GetByIds(t *testing.T) {
 		id1 := uuid.New()
 		id2 := uuid.New()
 
-		mockInsight1 := database.InsightModel{Id: id1, Text: "Insight 1"}
-		mockInsight2 := database.InsightModel{Id: id2, Text: "Insight 2"}
+		mockInsight1 := database.IMInsightModel{Id: id1, Text: "Insight 1"}
+		mockInsight2 := database.IMInsightModel{Id: id2, Text: "Insight 2"}
 
-		db := &database.InMemoryDatabase{
-			InsightStorage: map[uuid.UUID]database.InsightModel{
+		db := &database.IMDatabase{
+			InsightStorage: map[uuid.UUID]database.IMInsightModel{
 				id1: mockInsight1,
 				id2: mockInsight2,
 			},
@@ -41,10 +41,10 @@ func TestInMemoryDBInsightRepository_GetByIds(t *testing.T) {
 		idExisting := uuid.New()
 		idMissing := uuid.New()
 
-		mockInsight := database.InsightModel{Id: idExisting, Text: "Only Found Insight"}
+		mockInsight := database.IMInsightModel{Id: idExisting, Text: "Only Found Insight"}
 
-		db := &database.InMemoryDatabase{
-			InsightStorage: map[uuid.UUID]database.InsightModel{
+		db := &database.IMDatabase{
+			InsightStorage: map[uuid.UUID]database.IMInsightModel{
 				idExisting: mockInsight,
 			},
 		}
@@ -61,8 +61,8 @@ func TestInMemoryDBInsightRepository_GetByIds(t *testing.T) {
 
 	t.Run("should return empty list when no ids match", func(t *testing.T) {
 		// Arrange
-		db := &database.InMemoryDatabase{
-			InsightStorage: map[uuid.UUID]database.InsightModel{},
+		db := &database.IMDatabase{
+			InsightStorage: map[uuid.UUID]database.IMInsightModel{},
 		}
 		repo := insight.NewInMemoryDBInsightRepository(db)
 		missingID := uuid.New()
@@ -76,8 +76,8 @@ func TestInMemoryDBInsightRepository_GetByIds(t *testing.T) {
 
 	t.Run("should return empty list when ids slice is empty", func(t *testing.T) {
 		// Arrange
-		db := &database.InMemoryDatabase{
-			InsightStorage: map[uuid.UUID]database.InsightModel{},
+		db := &database.IMDatabase{
+			InsightStorage: map[uuid.UUID]database.IMInsightModel{},
 		}
 		repo := insight.NewInMemoryDBInsightRepository(db)
 
@@ -93,10 +93,10 @@ func TestInMemoryDBInsightRepository_GetById(t *testing.T) {
 	t.Run("should return insight when ID exists", func(t *testing.T) {
 		// Arrange
 		id := uuid.New()
-		mockInsight := database.InsightModel{Id: id, Text: "Existing Insight"}
+		mockInsight := database.IMInsightModel{Id: id, Text: "Existing Insight"}
 
-		db := &database.InMemoryDatabase{
-			InsightStorage: map[uuid.UUID]database.InsightModel{
+		db := &database.IMDatabase{
+			InsightStorage: map[uuid.UUID]database.IMInsightModel{
 				id: mockInsight,
 			},
 		}
@@ -114,8 +114,8 @@ func TestInMemoryDBInsightRepository_GetById(t *testing.T) {
 
 	t.Run("should return error when ID does not exist", func(t *testing.T) {
 		// Arrange
-		db := &database.InMemoryDatabase{
-			InsightStorage: map[uuid.UUID]database.InsightModel{},
+		db := &database.IMDatabase{
+			InsightStorage: map[uuid.UUID]database.IMInsightModel{},
 		}
 		repo := insight.NewInMemoryDBInsightRepository(db)
 

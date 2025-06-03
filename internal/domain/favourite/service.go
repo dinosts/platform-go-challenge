@@ -2,10 +2,10 @@ package favourite
 
 import (
 	"errors"
-	"platform-go-challenge/internal/audience"
-	"platform-go-challenge/internal/chart"
 	"platform-go-challenge/internal/database"
-	"platform-go-challenge/internal/insight"
+	"platform-go-challenge/internal/domain/audience"
+	"platform-go-challenge/internal/domain/chart"
+	"platform-go-challenge/internal/domain/insight"
 	"platform-go-challenge/internal/utils"
 	"sync"
 
@@ -147,7 +147,7 @@ func (service *favouriteService) CreateForUser(userId uuid.UUID, assetId uuid.UU
 func (service *favouriteService) Update(userId uuid.UUID, favouriteId uuid.UUID, newDescription string) (*Favourite, error) {
 	favourite, err := service.Dependencies.FavouriteRepository.GetById(favouriteId)
 	if err != nil {
-		if errors.Is(err, database.ErrItemNotFound) {
+		if errors.Is(err, database.IMErrItemNotFound) {
 			return nil, ErrFavouriteNotFound
 		}
 
@@ -168,7 +168,7 @@ func (service *favouriteService) Update(userId uuid.UUID, favouriteId uuid.UUID,
 func (service *favouriteService) Delete(userId uuid.UUID, favouriteId uuid.UUID) error {
 	favourite, err := service.Dependencies.FavouriteRepository.GetById(favouriteId)
 	if err != nil {
-		if errors.Is(err, database.ErrItemNotFound) {
+		if errors.Is(err, database.IMErrItemNotFound) {
 			return ErrFavouriteNotFound
 		}
 

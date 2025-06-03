@@ -12,16 +12,16 @@ type AudienceRepository interface {
 }
 
 type inMemoryDBAudienceRepository struct {
-	DB *database.InMemoryDatabase
+	DB *database.IMDatabase
 }
 
-func NewInMemoryDBAudienceRepository(db *database.InMemoryDatabase) *inMemoryDBAudienceRepository {
+func NewInMemoryDBAudienceRepository(db *database.IMDatabase) *inMemoryDBAudienceRepository {
 	return &inMemoryDBAudienceRepository{
 		DB: db,
 	}
 }
 
-func InMemoryDBAudienceModelToDTO(model database.AudienceModel) Audience {
+func InMemoryDBAudienceModelToDTO(model database.IMAudienceModel) Audience {
 	return Audience{
 		Id:                 model.Id,
 		Gender:             model.Gender,

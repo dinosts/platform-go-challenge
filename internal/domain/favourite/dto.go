@@ -1,9 +1,9 @@
 package favourite
 
 import (
-	"platform-go-challenge/internal/audience"
-	"platform-go-challenge/internal/chart"
-	"platform-go-challenge/internal/insight"
+	"platform-go-challenge/internal/domain/audience"
+	"platform-go-challenge/internal/domain/chart"
+	"platform-go-challenge/internal/domain/insight"
 
 	"github.com/google/uuid"
 )
@@ -11,11 +11,11 @@ import (
 type AssetType string
 
 type Favourite struct {
-	Id          uuid.UUID
-	UserId      uuid.UUID
-	AssetId     uuid.UUID
-	AssetType   AssetType
-	Description string
+	Id          uuid.UUID `json:"id"`
+	UserId      uuid.UUID `json:"user_id"`
+	AssetId     uuid.UUID `json:"asset_id"`
+	AssetType   AssetType `json:"asset_type"`
+	Description string    `json:"description"`
 }
 
 type AssetFavourites struct {
@@ -48,8 +48,7 @@ type CreateFavouriteRequestBody struct {
 }
 
 type UpdateFavouriteRequestBody struct {
-	Id          uuid.UUID `json:"id" validate:"required,uuid"`
-	Description string    `json:"description"`
+	Description string `json:"description"`
 }
 
 type DeleteFavouriteRequestBody struct {

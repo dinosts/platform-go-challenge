@@ -1,8 +1,8 @@
 package chart_test
 
 import (
-	"platform-go-challenge/internal/chart"
 	"platform-go-challenge/internal/database"
+	"platform-go-challenge/internal/domain/chart"
 	"testing"
 
 	"github.com/google/uuid"
@@ -15,8 +15,8 @@ func TestGetByIds(t *testing.T) {
 		chart1ID := uuid.New()
 		chart2ID := uuid.New()
 
-		mockDB := &database.InMemoryDatabase{
-			ChartStorage: map[uuid.UUID]database.ChartModel{
+		mockDB := &database.IMDatabase{
+			ChartStorage: map[uuid.UUID]database.IMChartModel{
 				chart1ID: {
 					Id:         chart1ID,
 					Title:      "Chart 1",
@@ -76,8 +76,8 @@ func TestGetByIds(t *testing.T) {
 		chart1ID := uuid.New()
 		nonexistentID := uuid.New()
 
-		mockDB := &database.InMemoryDatabase{
-			ChartStorage: map[uuid.UUID]database.ChartModel{
+		mockDB := &database.IMDatabase{
+			ChartStorage: map[uuid.UUID]database.IMChartModel{
 				chart1ID: {
 					Id:         chart1ID,
 					Title:      "Chart 1",
@@ -113,8 +113,8 @@ func TestGetByIds(t *testing.T) {
 
 	t.Run("should return empty slice when input is empty", func(t *testing.T) {
 		// Arrange
-		mockDB := &database.InMemoryDatabase{
-			ChartStorage: map[uuid.UUID]database.ChartModel{},
+		mockDB := &database.IMDatabase{
+			ChartStorage: map[uuid.UUID]database.IMChartModel{},
 		}
 		repo := chart.NewInMemoryDBChartRepository(mockDB)
 
@@ -130,8 +130,8 @@ func TestGetById(t *testing.T) {
 	t.Run("should return chart when ID exists", func(t *testing.T) {
 		// Arrange
 		chartID := uuid.New()
-		mockDB := &database.InMemoryDatabase{
-			ChartStorage: map[uuid.UUID]database.ChartModel{
+		mockDB := &database.IMDatabase{
+			ChartStorage: map[uuid.UUID]database.IMChartModel{
 				chartID: {
 					Id:         chartID,
 					Title:      "Chart 1",
@@ -167,8 +167,8 @@ func TestGetById(t *testing.T) {
 
 	t.Run("should return error when ID does not exist", func(t *testing.T) {
 		// Arrange
-		mockDB := &database.InMemoryDatabase{
-			ChartStorage: map[uuid.UUID]database.ChartModel{},
+		mockDB := &database.IMDatabase{
+			ChartStorage: map[uuid.UUID]database.IMChartModel{},
 		}
 		repo := chart.NewInMemoryDBChartRepository(mockDB)
 		missingID := uuid.New()

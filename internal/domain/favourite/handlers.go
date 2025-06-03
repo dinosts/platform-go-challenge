@@ -4,6 +4,9 @@ import (
 	"errors"
 	"net/http"
 	"platform-go-challenge/internal/utils"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type GetFavouritesHandlerDependencies struct {
@@ -80,6 +83,12 @@ type UpdateFavouriteHandlerDependencies struct {
 func UpdateFavouriteHandler(dependencies UpdateFavouriteHandlerDependencies) http.HandlerFunc {
 	validation := utils.BodyValidator[UpdateFavouriteRequestBody]
 	handler := func(w http.ResponseWriter, r *http.Request) {
+		favouriteId, err := uuid.Parse(chi.URLParam(r, "id"))
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "Favourite Id param is not a UUID")
+			return
+		}
+
 		userId, err := utils.GetUserIdFromAuthToken(r)
 		if err != nil {
 			// Should not happen since we have auth middlewares before this route
@@ -94,7 +103,7 @@ func UpdateFavouriteHandler(dependencies UpdateFavouriteHandlerDependencies) htt
 			return
 		}
 
-		favourite, err := dependencies.FavouriteService.Update(userId, body.Id, body.Description)
+		favourite, err := dependencies.FavouriteService.Update(userId, favouriteId, body.Description)
 		if err != nil {
 			if errors.Is(err, ErrFavouriteNotFound) {
 				utils.RespondWithError(w, http.StatusNotFound, "Could not find Favourite with this Id")
@@ -120,8 +129,13 @@ type DeleteFavouriteHandlerDependencies struct {
 }
 
 func DeleteFavouriteHandler(dependencies DeleteFavouriteHandlerDependencies) http.HandlerFunc {
-	validation := utils.BodyValidator[DeleteFavouriteRequestBody]
 	handler := func(w http.ResponseWriter, r *http.Request) {
+		favouriteId, err := uuid.Parse(chi.URLParam(r, "id"))
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "Favourite Id param is not a UUID")
+			return
+		}
+
 		userId, err := utils.GetUserIdFromAuthToken(r)
 		if err != nil {
 			// Should not happen since we have auth middlewares before this route
@@ -129,14 +143,7 @@ func DeleteFavouriteHandler(dependencies DeleteFavouriteHandlerDependencies) htt
 			return
 		}
 
-		body, ok := utils.GetParsedBody[DeleteFavouriteRequestBody](r)
-		if !ok {
-			// Should not happen since we validate body before getting in to handler
-			utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
-			return
-		}
-
-		err = dependencies.FavouriteService.Delete(userId, body.Id)
+		err = dependencies.FavouriteService.Delete(userId, favouriteId)
 		if err != nil {
 			if errors.Is(err, ErrFavouriteNotFound) {
 				utils.RespondWithError(w, http.StatusNotFound, "Could not find Asset with this Id")
@@ -154,5 +161,5 @@ func DeleteFavouriteHandler(dependencies DeleteFavouriteHandlerDependencies) htt
 		utils.RespondWithMessage(w, http.StatusOK, "Favourite deleted")
 	}
 
-	return validation(handler)
+	return handler
 }

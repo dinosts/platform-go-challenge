@@ -2,7 +2,7 @@ package favourite_test
 
 import (
 	"platform-go-challenge/internal/database"
-	"platform-go-challenge/internal/favourite"
+	"platform-go-challenge/internal/domain/favourite"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,25 +13,25 @@ func TestGetByUserIdPaginated(t *testing.T) {
 	user1 := uuid.New()
 	user2 := uuid.New()
 
-	fav1 := database.FavouriteModel{
+	fav1 := database.IMFavouriteModel{
 		Id: uuid.New(), UserId: user1, AssetId: uuid.New(), AssetType: "charts", Description: "fav1",
 	}
-	fav2 := database.FavouriteModel{
+	fav2 := database.IMFavouriteModel{
 		Id: uuid.New(), UserId: user1, AssetId: uuid.New(), AssetType: "charts", Description: "fav2",
 	}
-	fav3 := database.FavouriteModel{
+	fav3 := database.IMFavouriteModel{
 		Id: uuid.New(), UserId: user2, AssetId: uuid.New(), AssetType: "insights", Description: "fav3",
 	}
-	fav4 := database.FavouriteModel{
+	fav4 := database.IMFavouriteModel{
 		Id: uuid.New(), UserId: user1, AssetId: uuid.New(), AssetType: "audiences", Description: "fav4",
 	}
 
 	t.Run("should return first page of favourites for a user", func(t *testing.T) {
 		// Arrange
-		storage := map[uuid.UUID]database.FavouriteModel{
+		storage := map[uuid.UUID]database.IMFavouriteModel{
 			fav1.Id: fav1, fav2.Id: fav2, fav3.Id: fav3, fav4.Id: fav4,
 		}
-		repo := favourite.NewInMemoryDBFavouriteRepository(&database.InMemoryDatabase{FavouriteStorage: storage})
+		repo := favourite.NewInMemoryDBFavouriteRepository(&database.IMDatabase{FavouriteStorage: storage})
 		pageSize := 2
 		pageNumber := 0
 		expectedItemsLen := 2
@@ -53,10 +53,10 @@ func TestGetByUserIdPaginated(t *testing.T) {
 
 	t.Run("should return second page of favourites for a user", func(t *testing.T) {
 		// Arrange
-		storage := map[uuid.UUID]database.FavouriteModel{
+		storage := map[uuid.UUID]database.IMFavouriteModel{
 			fav1.Id: fav1, fav2.Id: fav2, fav3.Id: fav3, fav4.Id: fav4,
 		}
-		repo := favourite.NewInMemoryDBFavouriteRepository(&database.InMemoryDatabase{FavouriteStorage: storage})
+		repo := favourite.NewInMemoryDBFavouriteRepository(&database.IMDatabase{FavouriteStorage: storage})
 		pageSize := 2
 		pageNumber := 1
 		expectedItemsLen := 1
@@ -78,8 +78,8 @@ func TestGetByUserIdPaginated(t *testing.T) {
 
 	t.Run("should return empty slice when page number is out of range", func(t *testing.T) {
 		// Arrange
-		storage := map[uuid.UUID]database.FavouriteModel{fav1.Id: fav1}
-		repo := favourite.NewInMemoryDBFavouriteRepository(&database.InMemoryDatabase{FavouriteStorage: storage})
+		storage := map[uuid.UUID]database.IMFavouriteModel{fav1.Id: fav1}
+		repo := favourite.NewInMemoryDBFavouriteRepository(&database.IMDatabase{FavouriteStorage: storage})
 		pageSize := 1
 		pageNumber := 5
 
@@ -96,8 +96,8 @@ func TestGetByUserIdPaginated(t *testing.T) {
 
 	t.Run("should return empty slice when user has no favourites", func(t *testing.T) {
 		// Arrange
-		repo := favourite.NewInMemoryDBFavouriteRepository(&database.InMemoryDatabase{
-			FavouriteStorage: map[uuid.UUID]database.FavouriteModel{},
+		repo := favourite.NewInMemoryDBFavouriteRepository(&database.IMDatabase{
+			FavouriteStorage: map[uuid.UUID]database.IMFavouriteModel{},
 		})
 
 		// Act
@@ -113,7 +113,7 @@ func TestGetByUserIdPaginated(t *testing.T) {
 func TestCreate(t *testing.T) {
 	t.Run("should store favourite in memory database", func(t *testing.T) {
 		// Arrange
-		db := &database.InMemoryDatabase{FavouriteStorage: make(map[uuid.UUID]database.FavouriteModel)}
+		db := &database.IMDatabase{FavouriteStorage: make(map[uuid.UUID]database.IMFavouriteModel)}
 		repo := favourite.NewInMemoryDBFavouriteRepository(db)
 
 		newFav := favourite.Favourite{
@@ -149,7 +149,7 @@ func TestUpdate(t *testing.T) {
 			AssetType:   "charts",
 			Description: "created fav",
 		}
-		existingFavouriteModel := database.FavouriteModel{
+		existingFavouriteModel := database.IMFavouriteModel{
 			Id:          existingFavourite.Id,
 			UserId:      existingFavourite.UserId,
 			AssetId:     existingFavourite.AssetId,
@@ -157,7 +157,7 @@ func TestUpdate(t *testing.T) {
 			Description: existingFavourite.Description,
 		}
 
-		db := &database.InMemoryDatabase{FavouriteStorage: map[uuid.UUID]database.FavouriteModel{existingFavouriteModel.Id: existingFavouriteModel}}
+		db := &database.IMDatabase{FavouriteStorage: map[uuid.UUID]database.IMFavouriteModel{existingFavouriteModel.Id: existingFavouriteModel}}
 		repo := favourite.NewInMemoryDBFavouriteRepository(db)
 
 		updatedFavourite := existingFavourite
@@ -182,7 +182,7 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Run("should delete favourite in memory database", func(t *testing.T) {
 		// Arrange
-		model := database.FavouriteModel{
+		model := database.IMFavouriteModel{
 			Id:          uuid.New(),
 			UserId:      uuid.New(),
 			AssetId:     uuid.New(),
@@ -190,7 +190,7 @@ func TestDelete(t *testing.T) {
 			Description: "created fav",
 		}
 
-		db := &database.InMemoryDatabase{FavouriteStorage: map[uuid.UUID]database.FavouriteModel{model.Id: model}}
+		db := &database.IMDatabase{FavouriteStorage: map[uuid.UUID]database.IMFavouriteModel{model.Id: model}}
 		repo := favourite.NewInMemoryDBFavouriteRepository(db)
 
 		// Act
@@ -203,7 +203,7 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("should return err when favourite not foudnd in memory database", func(t *testing.T) {
 		// Arrange
-		model := database.FavouriteModel{
+		model := database.IMFavouriteModel{
 			Id:          uuid.New(),
 			UserId:      uuid.New(),
 			AssetId:     uuid.New(),
@@ -211,7 +211,7 @@ func TestDelete(t *testing.T) {
 			Description: "created fav",
 		}
 
-		db := &database.InMemoryDatabase{FavouriteStorage: map[uuid.UUID]database.FavouriteModel{model.Id: model}}
+		db := &database.IMDatabase{FavouriteStorage: map[uuid.UUID]database.IMFavouriteModel{model.Id: model}}
 		repo := favourite.NewInMemoryDBFavouriteRepository(db)
 
 		// Act

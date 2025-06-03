@@ -8,8 +8,10 @@ import (
 )
 
 type Config struct {
-	Environment  string
-	JWTSecretKey string
+	Environment       string
+	JWTSecretKey      string
+	HashingSalt       string
+	HashingIterations int
 }
 
 const notDefined = ""
@@ -40,6 +42,7 @@ func buildConfig() *Config {
 	cfg := Config{
 		Environment:  GetOptionalEnvVariableWithDefaultValue("APP_ENV", "dev"),
 		JWTSecretKey: GetRequiredEnvVariable("JWT_SECRET_KEY"),
+		HashingSalt:  GetRequiredEnvVariable("HASHING_SALT"),
 	}
 
 	return &cfg

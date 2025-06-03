@@ -2,7 +2,7 @@ package user_test
 
 import (
 	"platform-go-challenge/internal/database"
-	"platform-go-challenge/internal/user"
+	"platform-go-challenge/internal/domain/user"
 	"testing"
 
 	"github.com/google/uuid"
@@ -12,12 +12,12 @@ import (
 func TestInMemoryDBUserRepository_GetByEmail(t *testing.T) {
 	t.Run("should return user when email exists in database", func(t *testing.T) {
 		// Arrange
-		expectedUser := database.UserModel{
+		expectedUser := database.IMUserModel{
 			Id:       uuid.New(),
 			Email:    "test@example.com",
 			Password: "secret",
 		}
-		db := &database.InMemoryDatabase{
+		db := &database.IMDatabase{
 			UserStorage: database.UserStorage{
 				expectedUser.Id: expectedUser,
 			},
@@ -37,7 +37,7 @@ func TestInMemoryDBUserRepository_GetByEmail(t *testing.T) {
 
 	t.Run("should return error when email does not exist in database", func(t *testing.T) {
 		// Arrange
-		db := &database.InMemoryDatabase{
+		db := &database.IMDatabase{
 			UserStorage: database.UserStorage{},
 		}
 		repo := user.NewInMemoryDBUserRepository(db)

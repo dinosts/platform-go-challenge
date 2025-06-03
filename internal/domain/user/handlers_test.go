@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"platform-go-challenge/internal/user"
+	"platform-go-challenge/internal/domain/user"
 	"platform-go-challenge/internal/utils"
 	"testing"
 	"time"

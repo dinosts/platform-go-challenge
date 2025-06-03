@@ -12,16 +12,16 @@ type InsightRepository interface {
 }
 
 type inMemoryDBInsightRepository struct {
-	DB *database.InMemoryDatabase
+	DB *database.IMDatabase
 }
 
-func NewInMemoryDBInsightRepository(db *database.InMemoryDatabase) *inMemoryDBInsightRepository {
+func NewInMemoryDBInsightRepository(db *database.IMDatabase) *inMemoryDBInsightRepository {
 	return &inMemoryDBInsightRepository{
 		DB: db,
 	}
 }
 
-func InMemoryDBInsightModelToDTO(insightModel database.InsightModel) Insight {
+func InMemoryDBInsightModelToDTO(insightModel database.IMInsightModel) Insight {
 	return Insight{
 		Id:   insightModel.Id,
 		Text: insightModel.Text,

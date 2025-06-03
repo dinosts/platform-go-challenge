@@ -19,16 +19,16 @@ type FavouriteRepository interface {
 }
 
 type inMemoryDBFavouriteRepository struct {
-	DB *database.InMemoryDatabase
+	DB *database.IMDatabase
 }
 
-func NewInMemoryDBFavouriteRepository(db *database.InMemoryDatabase) *inMemoryDBFavouriteRepository {
+func NewInMemoryDBFavouriteRepository(db *database.IMDatabase) *inMemoryDBFavouriteRepository {
 	return &inMemoryDBFavouriteRepository{
 		DB: db,
 	}
 }
 
-func InMemoryDBFavouriteModelToDTO(model database.FavouriteModel) Favourite {
+func InMemoryDBFavouriteModelToDTO(model database.IMFavouriteModel) Favourite {
 	return Favourite{
 		Id:          model.Id,
 		UserId:      model.UserId,
@@ -38,8 +38,8 @@ func InMemoryDBFavouriteModelToDTO(model database.FavouriteModel) Favourite {
 	}
 }
 
-func DTOToInMemoryDBFavouriteModel(dto Favourite) database.FavouriteModel {
-	return database.FavouriteModel{
+func DTOToInMemoryDBFavouriteModel(dto Favourite) database.IMFavouriteModel {
+	return database.IMFavouriteModel{
 		Id:          dto.Id,
 		UserId:      dto.UserId,
 		AssetId:     dto.AssetId,

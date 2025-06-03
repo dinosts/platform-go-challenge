@@ -7,11 +7,12 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"platform-go-challenge/internal/favourite"
+	"platform-go-challenge/internal/domain/favourite"
 	"platform-go-challenge/internal/utils"
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -305,7 +306,6 @@ func TestUpdateFavouriteHandler(t *testing.T) {
 		favouriteId := uuid.New()
 
 		requestBody := map[string]interface{}{
-			"id":          favouriteId.String(),
 			"description": "updated description",
 		}
 
@@ -329,8 +329,12 @@ func TestUpdateFavouriteHandler(t *testing.T) {
 		})
 
 		bodyBytes, _ := json.Marshal(requestBody)
+
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", favouriteId.String())
+
 		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
-		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req = req.WithContext(context.WithValue(injectJWT(req.Context(), userId.String()), chi.RouteCtxKey, ctx))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -347,7 +351,6 @@ func TestUpdateFavouriteHandler(t *testing.T) {
 		favouriteId := uuid.New()
 
 		requestBody := map[string]interface{}{
-			"id":          favouriteId.String(),
 			"description": "does not matter",
 		}
 
@@ -361,8 +364,12 @@ func TestUpdateFavouriteHandler(t *testing.T) {
 		})
 
 		bodyBytes, _ := json.Marshal(requestBody)
+
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", favouriteId.String())
+
 		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
-		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req = req.WithContext(context.WithValue(injectJWT(req.Context(), userId.String()), chi.RouteCtxKey, ctx))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -378,7 +385,6 @@ func TestUpdateFavouriteHandler(t *testing.T) {
 		userId := uuid.New()
 		favouriteId := uuid.New()
 		requestBody := map[string]interface{}{
-			"id":          favouriteId.String(),
 			"description": "test",
 		}
 		stubService := &StubFavouriteService{
@@ -391,8 +397,12 @@ func TestUpdateFavouriteHandler(t *testing.T) {
 		})
 
 		bodyBytes, _ := json.Marshal(requestBody)
+
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", favouriteId.String())
+
 		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
-		req = req.WithContext(injectJWT(req.Context(), userId.String()))
+		req = req.WithContext(context.WithValue(injectJWT(req.Context(), userId.String()), chi.RouteCtxKey, ctx))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -413,8 +423,14 @@ func TestUpdateFavouriteHandler(t *testing.T) {
 		handler := favourite.UpdateFavouriteHandler(favourite.UpdateFavouriteHandlerDependencies{
 			FavouriteService: &StubFavouriteService{},
 		})
+
 		bodyBytes, _ := json.Marshal(requestBody)
+
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", favouriteId.String())
+
 		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -425,27 +441,38 @@ func TestUpdateFavouriteHandler(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
 	})
 
-	t.Run("Should return 400 on unexpected service error", func(t *testing.T) {
+	t.Run("Should return 500 on unexpected service error", func(t *testing.T) {
 		// Arrange
 		userId := uuid.New()
+		requestBody := map[string]interface{}{
+			"description": "test",
+		}
 		stubService := &StubFavouriteService{
 			UpdateFunc: func(_, _ uuid.UUID, _ string) (*favourite.Favourite, error) {
 				return nil, errors.New("random error")
 			},
 		}
+
+		bodyBytes, _ := json.Marshal(requestBody)
+
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", uuid.New().String())
+
+		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
+		req = req.WithContext(context.WithValue(injectJWT(req.Context(), userId.String()), chi.RouteCtxKey, ctx))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+
 		handler := favourite.UpdateFavouriteHandler(favourite.UpdateFavouriteHandlerDependencies{
 			FavouriteService: stubService,
 		})
-		req := httptest.NewRequest(http.MethodPut, "/favourites", strings.NewReader(`{}`))
-		req.Header.Set("Content-Type", "application/json")
-		req = req.WithContext(injectJWT(req.Context(), userId.String()))
-		w := httptest.NewRecorder()
 
 		// Act
 		handler(w, req)
 
 		// Assert
-		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
 	})
 }
 
@@ -454,8 +481,6 @@ func TestDeleteFavouriteHandler(t *testing.T) {
 		// Arrange
 		userId := uuid.New()
 		favouriteId := uuid.New()
-
-		requestBody := map[string]any{"id": favouriteId.String()}
 
 		stubService := &StubFavouriteService{
 			DeleteFunc: func(uId, fId uuid.UUID) error {
@@ -471,10 +496,10 @@ func TestDeleteFavouriteHandler(t *testing.T) {
 			},
 		)
 
-		bodyBytes, _ := json.Marshal(requestBody)
-		req := httptest.NewRequest(http.MethodDelete, "/favourites", bytes.NewReader(bodyBytes))
-		req = req.WithContext(injectJWT(req.Context(), userId.String()))
-		req.Header.Set("Content-Type", "application/json")
+		req := httptest.NewRequest(http.MethodDelete, "/favourites", nil)
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", favouriteId.String())
+		req = req.WithContext(context.WithValue(injectJWT(req.Context(), userId.String()), chi.RouteCtxKey, ctx))
 		w := httptest.NewRecorder()
 
 		// Act
@@ -484,13 +509,33 @@ func TestDeleteFavouriteHandler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 	})
 
+	t.Run("Should return 400 when favourite Id param is not uuid", func(t *testing.T) {
+		// Arrange
+		stubService := &StubFavouriteService{
+			DeleteFunc: nil,
+		}
+		handler := favourite.DeleteFavouriteHandler(
+			favourite.DeleteFavouriteHandlerDependencies{
+				FavouriteService: stubService,
+			},
+		)
+
+		req := httptest.NewRequest(http.MethodDelete, "/favourites", nil)
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", "not-uuid")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
+		w := httptest.NewRecorder()
+
+		// Act
+		handler(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+
 	t.Run("Should return 404 when favourite is not found", func(t *testing.T) {
 		// Arrange
 		userId := uuid.New()
-
-		requestBody := map[string]interface{}{
-			"id": uuid.New().String(),
-		}
 
 		stubService := &StubFavouriteService{
 			DeleteFunc: func(_, _ uuid.UUID) error {
@@ -501,10 +546,10 @@ func TestDeleteFavouriteHandler(t *testing.T) {
 			FavouriteService: stubService,
 		})
 
-		bodyBytes, _ := json.Marshal(requestBody)
-		req := httptest.NewRequest(http.MethodDelete, "/favourites", bytes.NewReader(bodyBytes))
-		req = req.WithContext(injectJWT(req.Context(), userId.String()))
-		req.Header.Set("Content-Type", "application/json")
+		req := httptest.NewRequest(http.MethodDelete, "/favourites", nil)
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", uuid.New().String())
+		req = req.WithContext(context.WithValue(injectJWT(req.Context(), userId.String()), chi.RouteCtxKey, ctx))
 		w := httptest.NewRecorder()
 
 		// Act
@@ -517,9 +562,6 @@ func TestDeleteFavouriteHandler(t *testing.T) {
 	t.Run("Should return 401 when favourite is not under user", func(t *testing.T) {
 		// Arrange
 		userId := uuid.New()
-		requestBody := map[string]interface{}{
-			"id": uuid.New().String(),
-		}
 
 		stubService := &StubFavouriteService{
 			DeleteFunc: func(_, _ uuid.UUID) error {
@@ -529,10 +571,10 @@ func TestDeleteFavouriteHandler(t *testing.T) {
 
 		handler := favourite.DeleteFavouriteHandler(favourite.DeleteFavouriteHandlerDependencies{FavouriteService: stubService})
 
-		bodyBytes, _ := json.Marshal(requestBody)
-		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
-		req = req.WithContext(injectJWT(req.Context(), userId.String()))
-		req.Header.Set("Content-Type", "application/json")
+		req := httptest.NewRequest(http.MethodDelete, "/favourites", nil)
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", uuid.New().String())
+		req = req.WithContext(context.WithValue(injectJWT(req.Context(), userId.String()), chi.RouteCtxKey, ctx))
 		w := httptest.NewRecorder()
 
 		// Act
@@ -544,15 +586,14 @@ func TestDeleteFavouriteHandler(t *testing.T) {
 
 	t.Run("Should return 500 when JWT is missing", func(t *testing.T) {
 		// Arrange
-		requestBody := map[string]interface{}{
-			"id": uuid.New().String(),
-		}
 		handler := favourite.DeleteFavouriteHandler(favourite.DeleteFavouriteHandlerDependencies{
 			FavouriteService: &StubFavouriteService{},
 		})
-		bodyBytes, _ := json.Marshal(requestBody)
-		req := httptest.NewRequest(http.MethodPatch, "/favourites", bytes.NewReader(bodyBytes))
-		req.Header.Set("Content-Type", "application/json")
+
+		req := httptest.NewRequest(http.MethodDelete, "/favourites", nil)
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", uuid.New().String())
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
 		w := httptest.NewRecorder()
 
 		// Act
@@ -572,7 +613,7 @@ func TestDeleteFavouriteHandler(t *testing.T) {
 		}
 
 		handler := favourite.DeleteFavouriteHandler(favourite.DeleteFavouriteHandlerDependencies{FavouriteService: stubService})
-		req := httptest.NewRequest(http.MethodPut, "/favourites", strings.NewReader(`{}`))
+		req := httptest.NewRequest(http.MethodDelete, "/favourites", strings.NewReader(`{}`))
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(injectJWT(req.Context(), userId.String()))
 		w := httptest.NewRecorder()

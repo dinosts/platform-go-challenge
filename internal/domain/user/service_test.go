@@ -2,7 +2,7 @@ package user_test
 
 import (
 	"errors"
-	"platform-go-challenge/internal/user"
+	"platform-go-challenge/internal/domain/user"
 	"testing"
 	"time"
 
@@ -37,9 +37,13 @@ func TestUserService_LoginUser(t *testing.T) {
 		mockTokenFn := func(claims map[string]any) (string, time.Time, error) {
 			return expectedToken, expectedExpiry, nil
 		}
+		mockPasswordHasher := func(password string) string {
+			return password
+		}
 		service := user.NewUserService(user.ServiceDependencies{
 			UserRepository: mockRepo,
 			GenerateToken:  mockTokenFn,
+			PasswordHasher: mockPasswordHasher,
 		})
 
 		// Act
@@ -61,6 +65,7 @@ func TestUserService_LoginUser(t *testing.T) {
 		service := user.NewUserService(user.ServiceDependencies{
 			UserRepository: mockRepo,
 			GenerateToken:  nil,
+			PasswordHasher: nil,
 		})
 
 		// Act
@@ -86,6 +91,7 @@ func TestUserService_LoginUser(t *testing.T) {
 		service := user.NewUserService(user.ServiceDependencies{
 			UserRepository: mockRepo,
 			GenerateToken:  nil,
+			PasswordHasher: func(password string) string { return password },
 		})
 
 		// Act
@@ -114,6 +120,7 @@ func TestUserService_LoginUser(t *testing.T) {
 		service := user.NewUserService(user.ServiceDependencies{
 			UserRepository: mockRepo,
 			GenerateToken:  mockTokenFn,
+			PasswordHasher: func(password string) string { return password },
 		})
 
 		// Act

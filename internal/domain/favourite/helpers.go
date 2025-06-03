@@ -1,9 +1,9 @@
 package favourite
 
 import (
-	"platform-go-challenge/internal/audience"
-	"platform-go-challenge/internal/chart"
-	"platform-go-challenge/internal/insight"
+	"platform-go-challenge/internal/domain/audience"
+	"platform-go-challenge/internal/domain/chart"
+	"platform-go-challenge/internal/domain/insight"
 
 	"github.com/google/uuid"
 )

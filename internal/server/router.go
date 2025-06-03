@@ -25,7 +25,6 @@ func SetupRouter(dependencies RouterDependencies) *chi.Mux {
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
 
 	// ratelimit: 100req per 1min
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
@@ -45,9 +44,10 @@ func SetupRouter(dependencies RouterDependencies) *chi.Mux {
 					r.Use(utils.AuthenticatorMiddleware())
 
 					r.Get("/favourites", dependencies.GetFavouritesHandler)
+					// TODO: Add Idempotency to this endpoint
 					r.Post("/favourites", dependencies.CreateFavouriteHandler)
-					r.Patch("/favourites", dependencies.UpdateFavouriteHandler)
-					r.Delete("/favourites", dependencies.DeleteFavouriteHandler)
+					r.Patch("/favourites/{id}", dependencies.UpdateFavouriteHandler)
+					r.Delete("/favourites/{id}", dependencies.DeleteFavouriteHandler)
 				})
 			})
 		})

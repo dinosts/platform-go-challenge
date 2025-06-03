@@ -1,30 +1,29 @@
-package server
+package test
 
 import (
-	"net/http"
-	"platform-go-challenge/internal/config"
+	"net/http/httptest"
 	"platform-go-challenge/internal/database"
 	"platform-go-challenge/internal/domain/audience"
 	"platform-go-challenge/internal/domain/chart"
 	"platform-go-challenge/internal/domain/favourite"
 	"platform-go-challenge/internal/domain/insight"
 	"platform-go-challenge/internal/domain/user"
+	"platform-go-challenge/internal/server"
 	"platform-go-challenge/internal/utils"
 )
 
-func wireDependencies(cfg config.Config) (*RouterDependencies, error) {
-	jwtAuth := utils.NewJWTAuth(cfg.JWTSecretKey)
-	passwordHasher := utils.NewHasher(cfg.HashingSalt)
+func StartServer() (*httptest.Server, string) {
+	jwtAuth := utils.NewJWTAuth("test-secret")
+	passwordHasher := utils.NewHasher("test-secret")
 	db := database.NewIMDatabase()
+	tokenIssuer := utils.NewJWTokenIssuer(jwtAuth)
 
-	if cfg.Environment == "dev" {
-		database.IMpopulateStorageForDevEnv(db, passwordHasher)
-	}
+	database.IMpopulateStorageForDevEnv(db, passwordHasher)
 
 	// Users
 	userRepository := user.NewInMemoryDBUserRepository(db)
 	userService := user.NewUserService(user.ServiceDependencies{
-		GenerateToken:  utils.NewJWTokenIssuer(jwtAuth),
+		GenerateToken:  tokenIssuer,
 		UserRepository: &userRepository,
 		PasswordHasher: passwordHasher,
 	})
@@ -73,7 +72,7 @@ func wireDependencies(cfg config.Config) (*RouterDependencies, error) {
 	)
 
 	// Routing
-	routerDependencies := RouterDependencies{
+	routerDependencies := server.RouterDependencies{
 		JWTAuth:                jwtAuth,
 		UserLoginHandler:       userLoginHandler,
 		GetFavouritesHandler:   getFavouritesHandler,
@@ -82,15 +81,14 @@ func wireDependencies(cfg config.Config) (*RouterDependencies, error) {
 		DeleteFavouriteHandler: deleteFavouriteHandler,
 	}
 
-	return &routerDependencies, nil
-}
+	router := server.SetupRouter(routerDependencies)
 
-func StartServer() {
-	cfg := config.NewConfig()
+	server := httptest.NewServer(router)
 
-	dependencies, _ := wireDependencies(*cfg)
-
-	router := SetupRouter(*dependencies)
-
-	http.ListenAndServe(":3008", router)
+	token, _, _ := tokenIssuer(
+		map[string]any{
+			"sub": "a3973a1c-a77b-4a04-a296-ddec19034419",
+		},
+	)
+	return server, token
 }

@@ -1,8 +1,8 @@
 package audience_test
 
 import (
-	"platform-go-challenge/internal/audience"
 	"platform-go-challenge/internal/database"
+	"platform-go-challenge/internal/domain/audience"
 	"testing"
 
 	"github.com/google/uuid"
@@ -15,8 +15,8 @@ func TestGetByIds(t *testing.T) {
 		aud1ID := uuid.New()
 		aud2ID := uuid.New()
 
-		mockDB := &database.InMemoryDatabase{
-			AudienceStorage: map[uuid.UUID]database.AudienceModel{
+		mockDB := &database.IMDatabase{
+			AudienceStorage: map[uuid.UUID]database.IMAudienceModel{
 				aud1ID: {
 					Id:                 aud1ID,
 					Gender:             "Female",
@@ -69,8 +69,8 @@ func TestGetByIds(t *testing.T) {
 		aud1ID := uuid.New()
 		missingID := uuid.New()
 
-		mockDB := &database.InMemoryDatabase{
-			AudienceStorage: map[uuid.UUID]database.AudienceModel{
+		mockDB := &database.IMDatabase{
+			AudienceStorage: map[uuid.UUID]database.IMAudienceModel{
 				aud1ID: {
 					Id:                 aud1ID,
 					Gender:             "Female",
@@ -104,8 +104,8 @@ func TestGetByIds(t *testing.T) {
 
 	t.Run("should return empty slice when input is empty", func(t *testing.T) {
 		// Arrange
-		mockDB := &database.InMemoryDatabase{
-			AudienceStorage: map[uuid.UUID]database.AudienceModel{},
+		mockDB := &database.IMDatabase{
+			AudienceStorage: map[uuid.UUID]database.IMAudienceModel{},
 		}
 		repo := audience.NewInMemoryDBAudienceRepository(mockDB)
 
@@ -121,8 +121,8 @@ func TestGetById(t *testing.T) {
 	t.Run("should return audience when ID exists", func(t *testing.T) {
 		// Arrange
 		audID := uuid.New()
-		mockDB := &database.InMemoryDatabase{
-			AudienceStorage: map[uuid.UUID]database.AudienceModel{
+		mockDB := &database.IMDatabase{
+			AudienceStorage: map[uuid.UUID]database.IMAudienceModel{
 				audID: {
 					Id:                 audID,
 					Gender:             "Other",
@@ -155,8 +155,8 @@ func TestGetById(t *testing.T) {
 
 	t.Run("should return error when ID does not exist", func(t *testing.T) {
 		// Arrange
-		mockDB := &database.InMemoryDatabase{
-			AudienceStorage: map[uuid.UUID]database.AudienceModel{},
+		mockDB := &database.IMDatabase{
+			AudienceStorage: map[uuid.UUID]database.IMAudienceModel{},
 		}
 		repo := audience.NewInMemoryDBAudienceRepository(mockDB)
 

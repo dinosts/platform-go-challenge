@@ -2,10 +2,10 @@ package favourite_test
 
 import (
 	"errors"
-	"platform-go-challenge/internal/audience"
-	"platform-go-challenge/internal/chart"
-	"platform-go-challenge/internal/favourite"
-	"platform-go-challenge/internal/insight"
+	"platform-go-challenge/internal/domain/audience"
+	"platform-go-challenge/internal/domain/chart"
+	"platform-go-challenge/internal/domain/favourite"
+	"platform-go-challenge/internal/domain/insight"
 	"testing"
 
 	"github.com/google/uuid"

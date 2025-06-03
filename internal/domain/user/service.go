@@ -11,6 +11,7 @@ type UserService interface {
 type ServiceDependencies struct {
 	UserRepository UserRepository
 	GenerateToken  func(map[string]any) (string, time.Time, error)
+	PasswordHasher func(string) string
 }
 
 type userService struct {
@@ -25,7 +26,13 @@ func NewUserService(dependencies ServiceDependencies) userService {
 
 func (service *userService) LoginUser(email string, password string) (string, time.Time, error) {
 	user, err := service.Dependencies.UserRepository.GetByEmail(email)
-	if err != nil || user.Password != password {
+	if err != nil {
+		return "", time.Time{}, ErrLoginFailed
+	}
+
+	hashedPassword := service.Dependencies.PasswordHasher(password)
+
+	if user.Password != hashedPassword {
 		return "", time.Time{}, ErrLoginFailed
 	}
 

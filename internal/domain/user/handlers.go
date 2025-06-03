@@ -12,7 +12,6 @@ type UserLoginDependencies struct {
 
 func UserLoginHandler(dependencies UserLoginDependencies) http.HandlerFunc {
 	validation := utils.BodyValidator[UserLoginRequestBody]
-
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		body, ok := utils.GetParsedBody[UserLoginRequestBody](r)
 		if !ok {

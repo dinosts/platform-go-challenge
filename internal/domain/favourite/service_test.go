@@ -2,11 +2,11 @@ package favourite_test
 
 import (
 	"errors"
-	"platform-go-challenge/internal/audience"
-	"platform-go-challenge/internal/chart"
 	"platform-go-challenge/internal/database"
-	"platform-go-challenge/internal/favourite"
-	"platform-go-challenge/internal/insight"
+	"platform-go-challenge/internal/domain/audience"
+	"platform-go-challenge/internal/domain/chart"
+	"platform-go-challenge/internal/domain/favourite"
+	"platform-go-challenge/internal/domain/insight"
 	"platform-go-challenge/internal/utils"
 	"testing"
 
@@ -272,7 +272,7 @@ func TestUpdateService(t *testing.T) {
 		// Arrange
 		mockFavRepo := &mockFavouriteRepo{
 			getByIdFn: func(id uuid.UUID) (*favourite.Favourite, error) {
-				return nil, database.ErrItemNotFound
+				return nil, database.IMErrItemNotFound
 			},
 		}
 		service := favourite.NewFavouriteService(favourite.FavouriteServiceDependencies{
@@ -385,7 +385,7 @@ func TestDeleteService(t *testing.T) {
 		// Arrange
 		mockFavRepo := &mockFavouriteRepo{
 			getByIdFn: func(id uuid.UUID) (*favourite.Favourite, error) {
-				return nil, database.ErrItemNotFound
+				return nil, database.IMErrItemNotFound
 			},
 		}
 		service := favourite.NewFavouriteService(favourite.FavouriteServiceDependencies{
