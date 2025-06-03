@@ -1,0 +1,236 @@
+{
+	"info": {
+		"_postman_id": "e69d80e2-e781-4586-93fd-1d7e7a691ae0",
+		"name": "GWI GO Project",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14802032",
+		"_collection_link": "https://solar-satellite-183369.postman.co/workspace/plum~3b49a8aa-d117-46c4-813a-3621065909e6/collection/14802032-e69d80e2-e781-4586-93fd-1d7e7a691ae0?action=share&source=collection_link&creator=14802032"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "",
+						"type": "text"
+					},
+					{
+						"key": "",
+						"value": "Bearer",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "localhost:3008/",
+					"host": [
+						"localhost"
+					],
+					"port": "3008",
+					"path": [
+						""
+					]
+				},
+				"description": "### Endpoint Overview\n\nThis endpoint is designed to handle HTTP GET requests at the root URL (`/`). It serves as a basic health check or status endpoint for the application.\n\n### Request\n\n- **Method**: GET\n- **URL**: `http://localhost:3008/`\n    \n\n### Response\n\n- **Status Code**: 200 OK\n- **Content-Type**: application/json\n- **Response Body**:\n    - `message`: A string that may contain additional information or status messages.\n\n### Usage\n\nWhen this endpoint is accessed via a GET request, it will return a JSON response indicating the status of the application. The `message` field can be utilized to convey relevant information or confirmation of successful execution."
+			},
+			"response": []
+		},
+		{
+			"name": "User Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\":\"test@test.com\", \"password\":\"pass\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3008/v1/user/login",
+					"host": [
+						"localhost"
+					],
+					"port": "3008",
+					"path": [
+						"v1",
+						"user",
+						"login"
+					]
+				},
+				"description": "### User Login Endpoint\n\nThis endpoint allows users to authenticate by logging in with their email and password. Upon successful authentication, the server responds with a JWT token and its expiration time. The token should be used for authenticated requests going forward.\n\n---\n\n## Request\n\n- **Method:** `POST`\n- **URL:** `http://localhost:3008/v1/user/login`\n- **Headers:**  \n    `Content-Type: application/json`\n- **Body:** JSON object with the following fields:\n    \n\n| Field | Type | Description |\n| --- | --- | --- |\n| `email` | string | The user's email address |\n| `password` | string | The user's password |\n\n**Example Request Body:**\n\n``` json\n{\n  \"email\": \"test@test.com\",\n  \"password\": \"pass\"\n}\n\n ```\n\nResponse\n\n### Success (200 OK)\n\nReturns a JSON object containing the authentication token and its expiration time.\n\n**Response body:**\n\n``` json\n{\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"expires_at\": \"2025-06-04T15:04:05Z\"\n  }\n}\n\n ```\n\n- `token` (string): JWT authentication token for subsequent requests.\n- `expires_at` (string, ISO8601 datetime): Token expiration timestamp.\n    \n\n### Error Responses\n\n- **401 Unauthorized:** Invalid email or password.\n    \n\n``` json\n{\n  \"error\": \"Invalid email or password\"\n}\n\n ```\n\n- **500 Internal Server Error:** Server-side errors.\n    \n\n``` json\n{\n  \"error\": \"Internal Server Error\"\n}\n\n ```\n\n---\n\n## Behavior Details\n\n- If login credentials are invalid, the server responds with a `401 Unauthorized` error and a message `\"Invalid email or password\"`.\n- On successful authentication, the server generates a token and expiry timestamp returned in the response.\n- The `token` should be included in the `Authorization` header with the format:  \n    `Authorization: Bearer` for authenticated API calls."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Favourites",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:3008/v1/user/favourites?pageSize=10&pageNumber=0",
+					"host": [
+						"localhost"
+					],
+					"port": "3008",
+					"path": [
+						"v1",
+						"user",
+						"favourites"
+					],
+					"query": [
+						{
+							"key": "pageSize",
+							"value": "10"
+						},
+						{
+							"key": "pageNumber",
+							"value": "0"
+						}
+					]
+				},
+				"description": "### Get User Favourites\n\nThis endpoint retrieves the authenticated user's favourite items across multiple asset types: charts, insights, and audiences. It supports pagination to allow users to navigate large result sets.\n\n---\n\n### Request\n\n- **Method:** `GET`\n- **URL:** `http://localhost:3008/v1/user/favourites`\n- **Headers:**  \n    `Authorization: Bearer`\n- **Query Parameters:**\n    \n\n| Parameter | Type | Description |\n| --- | --- | --- |\n| `pageSize` | integer | (Optional) Number of items per page (default: 10) |\n| `pageNumber` | integer | (Optional) Page number to retrieve (default: 0) |\n\n---\n\n### Response\n\n- **Success Status:** `200 OK`\n- **Content-Type:** `application/json`\n    \n\n### Response Body\n\nThe response contains the following fields:\n\n- `data`: An object with the user's favourite assets.\n- `pagination`: Pagination information.\n    \n\n### Data Structure\n\n``` json\n{\n  \"data\": {\n    \"charts\": [\n      {\n        \"id\": \"string\",\n        \"description\": \"string\",\n        \"info\": {\n          \"id\": \"string\",\n          \"title\": \"string\",\n          \"x_axis_title\": \"string\",\n          \"y_axis_title\": \"string\",\n          \"data\": [\n            {\n              \"x\": number,\n              \"y\": number\n            }\n          ]\n        }\n      }\n    ],\n    \"insights\": [\n      {\n        \"id\": \"string\",\n        \"description\": \"string\",\n        \"info\": {\n          \"Id\": \"string\",\n          \"Text\": \"string\"\n        }\n      }\n    ],\n    \"audiences\": [\n      {\n        \"id\": \"string\",\n        \"description\": \"string\",\n        \"info\": {\n          \"id\": \"string\",\n          \"gender\": \"string\",\n          \"birth_country\": \"string\",\n          \"age_group\": \"string\",\n          \"social_media_hours\": number,\n          \"purchases_last_month\": number\n        }\n      }\n    ]\n  },\n  \"pagination\": {\n    \"page\": number,\n    \"pageSize\": number,\n    \"maxPage\": number\n  }\n}\n\n ```\n\n---\n\n### Error Responses\n\n#### Structure\n\nAll error responses have the following format:\n\n``` json\n{\n  \"error\": \"string\"\n}\n\n ```\n\n#### Possible Error Codes\n\n| Status Code | Message | Cause |\n| --- | --- | --- |\n| `400` | `\"Invalid query params\"` | Malformed or invalid `pageSize` or `pageNumber` |\n| `401` | `\"Unauthorized\"` | Missing or invalid JWT token (from middleware) |\n| `500` | `\"Internal Server Error\"` | Unexpected error while processing the request |\n\n---\n\n#### Example Success Response\n\n``` json\n{\n  \"data\": {\n    \"charts\": [\n      {\n        \"id\": \"chart1\",\n        \"description\": \"Sales over time\",\n        \"info\": {\n          \"id\": \"info1\",\n          \"title\": \"Monthly Sales\",\n          \"x_axis_title\": \"Month\",\n          \"y_axis_title\": \"Revenue\",\n          \"data\": [\n            { \"x\": 1, \"y\": 1000 },\n            { \"x\": 2, \"y\": 1200 }\n          ]\n        }\n      }\n    ],\n    \"insights\": [\n      {\n        \"id\": \"insight1\",\n        \"description\": \"Customer retention trend\",\n        \"info\": {\n          \"Id\": \"i1\",\n          \"Text\": \"Retention improved by 15% this quarter\"\n        }\n      }\n    ],\n    \"audiences\": [\n      {\n        \"id\": \"aud1\",\n        \"description\": \"Young social users\",\n        \"info\": {\n          \"id\": \"a1\",\n          \"gender\": \"Female\",\n          \"birth_country\": \"USA\",\n          \"age_group\": \"18-24\",\n          \"social_media_hours\": 5,\n          \"purchases_last_month\": 3\n        }\n      }\n    ]\n  },\n  \"pagination\": {\n    \"page\": 0,\n    \"pageSize\": 10,\n    \"maxPage\": 2\n  }\n}\n\n ```\n\n---\n\n#### Example Error Response\n\n``` json\n{\n  \"error\": \"Internal Server Error\"\n}\n\n ```"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Favourite",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"assetId\": \"22222222-2222-2222-2222-222222222223\",\n    \"description\": \"Great for the team\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3008/v1/user/favourites",
+					"host": [
+						"localhost"
+					],
+					"port": "3008",
+					"path": [
+						"v1",
+						"user",
+						"favourites"
+					]
+				},
+				"description": "### Create Favourite\n\nThis endpoint allows an authenticated user to create a favourite for a specific asset (such as a chart, insight, or audience). An optional description can be included. On success, the server returns the full details of the newly created favourite.\n\n---\n\n**Method:**  \n`POST`\n\n**URL:**  \n`http://localhost:3008/v1/user/favourites`\n\n**Headers:**\n\n- `Authorization: Bearer`\n- `Content-Type: application/json`\n    \n\n---\n\n### Request Body\n\nThe request must be in JSON format and include:\n\n- `asset_id` (string, required): The UUID of the asset to favourite.\n- `description` (string, optional): A custom message or note about why the asset is a favourite.\n    \n\n**Example:**\n\n``` json\n{\n  \"asset_id\": \"22222222-2222-2222-2222-222222222223\",\n  \"description\": \"Great for the team\"\n}\n\n ```\n\n---\n\n### Successful Response\n\n**Status:**  \n`201 Created`\n\n**Content-Type:**  \n`application/json`\n\n**Response Body:**\n\n``` json\n{\n  \"data\": {\n    \"id\": \"d1de021e-716b-43d9-b54b-36887fb21cf9\",\n    \"user_id\": \"a3973a1c-a77b-4a04-a296-ddec19034419\",\n    \"asset_id\": \"22222222-2222-2222-2222-222222222223\",\n    \"asset_type\": \"insight\",\n    \"description\": \"Great for the team\"\n  }\n}\n\n ```\n\n---\n\n### Field Descriptions\n\n- `id` (string): The unique ID of the favourite entry.\n- `user_id` (string): The UUID of the user who created the favourite.\n- `asset_id` (string): The UUID of the favourited asset.\n- `asset_type` (string): The type of asset favourited. One of:\n    - `\"chart\"`\n    - `\"insight\"`\n    - `\"audience\"`\n- `description` (string): The user-provided description\n    \n\n---\n\n### Error Responses\n\nAll error responses follow this structure:\n\n``` json\n{\n  \"error\": \"Message describing the error\"\n}\n\n ```\n\n**Possible Errors:**\n\n- `401 Unauthorized`: Missing or invalid authentication token.\n- `404 Not Found`: The asset with the specified `asset_id` does not exist.\n- `500 Internal Server Error`: An unexpected server error occurred (e.g., body parsing or user ID extraction failed)."
+			},
+			"response": []
+		},
+		{
+			"name": "Update Favourite",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"description\": \"Good to know\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3008/v1/user/favourites/32b700d4-b614-43ab-a6da-52feaef1aee8",
+					"host": [
+						"localhost"
+					],
+					"port": "3008",
+					"path": [
+						"v1",
+						"user",
+						"favourites",
+						"32b700d4-b614-43ab-a6da-52feaef1aee8"
+					]
+				},
+				"description": "### Update User Favourite\n\nThis endpoint allows an authenticated user to update the description of an existing favourite item. The user must specify the unique ID of the favourite in the URL path. Only the owner of the favourite can update it.\n\n---\n\n**Method:**  \n`PATCH`\n\n**URL:**  \n`http://localhost:3008/v1/user/favourites/{favouriteId}`\n\n**Headers:**\n\n- `Authorization: Bearer`\n- `Content-Type: application/json`\n    \n\n---\n\n### Path Parameters\n\n- `favouriteId` (string, required): The UUID of the favourite to update.\n    \n\n---\n\n### Request Body\n\n- `description` (string, required): The new description for the favourite.\n    \n\n**Example:**\n\n``` json\n{\n  \"description\": \"Good to know\"\n}\n\n ```\n\n---\n\n### Successful Response\n\n**Status:**  \n`200 OK`\n\n**Content-Type:**  \n`application/json`\n\n**Response Body:**\n\n``` json\n{\n  \"data\": {\n    \"id\": \"e1b9ef44-1472-4cf1-b4e5-241f0c1f77f1\",\n    \"user_id\": \"a3973a1c-a77b-4a04-a296-ddec19034419\",\n    \"asset_id\": \"22222222-2222-2222-2222-222222222223\",\n    \"asset_type\": \"insight\",\n    \"description\": \"Good to know\"\n  }\n}\n\n ```\n\n---\n\n### Field Types\n\n- `id` (string): The unique identifier of the favourite.\n- `user_id` (string): UUID of the user who owns the favourite.\n- `asset_id` (string): UUID of the associated asset.\n- `asset_type` (string): Type of asset — `\"chart\"`, `\"insight\"`, or `\"audience\"`.\n- `description` (string): The updated description provided by the user.\n    \n\n---\n\n### Error Responses\n\nAll error responses follow this structure:\n\n``` json\n{\n  \"error\": \"Message describing the error\"\n}\n\n ```\n\n**Possible Errors:**\n\n- `400 Bad Request`:\n    - The `favouriteId` in the path is not a valid UUID.\n- `401 Unauthorized`:\n    - The favourite does not belong to the authenticated user.\n- `404 Not Found`:\n    \n    - No favourite exists with the provided ID.\n        \n- `500 Internal Server Error`:\n    \n    - Unexpected server error"
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Favourite",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3008/v1/user/favourites/32b700d4-b614-43ab-a6da-52feaef1aee8",
+					"host": [
+						"localhost"
+					],
+					"port": "3008",
+					"path": [
+						"v1",
+						"user",
+						"favourites",
+						"32b700d4-b614-43ab-a6da-52feaef1aee8"
+					]
+				},
+				"description": "### Delete User Favourite\n\nThis endpoint allows an authenticated user to delete a favourite item by specifying its unique identifier. The favourite must belong to the requesting user.\n\n---\n\n**Method:**  \n`DELETE`\n\n**URL:**  \n`http://localhost:3008/v1/user/favourites/{favouriteId}`\n\n**Headers:**\n\n- `Authorization: Bearer`\n    \n\n---\n\n### Path Parameters\n\n- `favouriteId` (string, required): The UUID of the favourite to be deleted.\n    \n\n---\n\n### Successful Response\n\n**Status:**  \n`200 OK`\n\n**Content-Type:**  \n`application/json`\n\n**Response Body:**\n\n``` json\n{\n  \"message\": \"Favourite deleted\"\n}\n\n ```\n\n---\n\n### Error Responses\n\nAll error responses follow this structure:\n\n``` json\n{\n  \"error\": \"Message describing the error\"\n}\n\n ```\n\n**Possible Errors:**\n\n- `400 Bad Request`:\n    \n    - `favouriteId` is not a valid UUID.\n        \n- `401 Unauthorized`:\n    \n    - The favourite does not belong to the authenticated user.\n        \n- `404 Not Found`:\n    \n    - No favourite item found with the given ID.\n        \n- `500 Internal Server Error`:\n    \n    - Unexpected server issue, such as failure extracting the user ID (should not occur under normal usage).\n        \n\n---\n\n### Notes\n\n- This endpoint requires authentication. A valid JWT token must be included in the request headers.\n    \n- A user can only delete their own favourites. Trying to delete a favourite owned by another user will result in an `Unauthorized` error.\n    \n- If deletion is successful, a `200 OK` response with a confirmation message (`\"Favourite deleted\"`) is returned."
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDg5NzU2NjksImlhdCI6MTc0ODk3NDc2OSwic3ViIjoiYTM5NzNhMWMtYTc3Yi00YTA0LWEyOTYtZGRlYzE5MDM0NDE5In0.jA3RhsXSUh0S6hD0xGvqAQMNTzAay8ZcPAKRe1GvwDA",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
